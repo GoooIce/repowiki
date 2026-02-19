@@ -2,6 +2,7 @@
 
 <cite>
 Source files referenced:
+- [CLAUDE.md](/to/CLAUDE.md)
 - [README.md](/to/README.md)
 - [cmd/repowiki/main.go](/to/cmd/repowiki/main.go)
 - [go.mod](/to/go.mod)
