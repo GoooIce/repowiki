@@ -290,11 +290,11 @@ repowiki v0.1.0
 ### Viewing Logs
 
 ```bash
-# View today's log
-cat .repowiki/logs/$(date +%Y-%m-%d).log
+# View the most recent log
+repowiki logs
 
-# View hook execution log
-cat .repowiki/logs/hook.log
+# View all logs in the directory
+ls -la .repowiki/logs/
 ```
 
 ### Disabling

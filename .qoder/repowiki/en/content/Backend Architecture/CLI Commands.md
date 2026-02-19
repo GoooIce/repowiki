@@ -9,6 +9,7 @@ Source files referenced:
 - [cmd/repowiki/generate.go](/to/cmd/repowiki/generate.go)
 - [cmd/repowiki/update.go](/to/cmd/repowiki/update.go)
 - [cmd/repowiki/hooks.go](/to/cmd/repowiki/hooks.go)
+- [cmd/repowiki/logs.go](/to/cmd/repowiki/logs.go)
 </cite>
 
 ## Table of Contents
@@ -21,6 +22,7 @@ Source files referenced:
 - [Generate Command](#generate-command)
 - [Update Command](#update-command)
 - [Hooks Command](#hooks-command)
+- [Logs Command](#logs-command)
 
 ## Command Overview
 
@@ -35,6 +37,7 @@ flowchart LR
     Router --> Generate["generate"]
     Router --> Update["update"]
     Router --> Hooks["hooks"]
+    Router --> Logs["logs"]
     Router --> Version["version"]
 ```
 
@@ -64,6 +67,8 @@ func main() {
         handleUpdate(os.Args[2:])
     case "hooks":
         handleHooks(os.Args[2:])
+    case "logs":
+        handleLogs(os.Args[2:])
     case "version", "--version", "-v":
         fmt.Printf("repowiki v%s\n", Version)
     case "help", "--help", "-h":
@@ -133,16 +138,23 @@ func handleEnable(args []string) {
         fmt.Fprintf(os.Stderr, "Warning: %v\n", findErr)
     }
 
-    // 5. Save config and install hook
+    // 5. Save config
     config.Save(gitRoot, cfg)
-    hook.Install(gitRoot, *force)
+    
+    // 6. Determine absolute path to this binary for the hook
+    selfPath, _ := os.Executable()
+    
+    // 7. Install git hook
+    hook.Install(gitRoot, *force, selfPath)
+    
+    // 8. Create Qoder command
     createQoderCommand(gitRoot)
 }
 ```
 
 ### Qoder Command Creation
 
-The enable command also creates a custom Qoder command:
+The enable command also creates a custom Qoder command at `.qoder/commands/update-wiki.md`:
 
 ```go
 func createQoderCommand(gitRoot string) {
@@ -150,11 +162,37 @@ func createQoderCommand(gitRoot string) {
     os.MkdirAll(cmdDir, 0755)
 
     cmdPath := filepath.Join(cmdDir, "update-wiki.md")
+    if _, err := os.Stat(cmdPath); err == nil {
+        return // Already exists
+    }
+
     content := `---
-description: Update the repository wiki documentation
+description: Update the repository wiki documentation based on recent code changes
 ---
 
-You are a technical documentation specialist...
+You are a technical documentation specialist. Update the repository wiki in ` + "`" + `.qoder/repowiki/` + "`" + ` to reflect the current state of the codebase.
+
+## Instructions
+
+1. Run ` + "`" + `git diff --name-only HEAD~5 HEAD` + "`" + ` to see recently changed files
+2. Read the changed source files to understand what was modified
+3. Read the existing wiki pages in ` + "`" + `.qoder/repowiki/en/content/` + "`" + `
+4. Update any wiki pages that reference or document the changed code
+5. If new modules/features were added without wiki coverage, create new pages
+6. Update ` + "`" + `.qoder/repowiki/en/meta/repowiki-metadata.json` + "`" + ` with new code snippet references
+
+## Formatting Rules
+
+- Each wiki page starts with an H1 title
+- Include a ` + "`" + `<cite>` + "`" + ` block listing all source files referenced
+- Include a Table of Contents after the cite block
+- Use mermaid diagrams for architecture documentation
+- Reference code with ` + "`" + `file://path/to/file` + "`" + ` format in cite blocks
+
+## Constraints
+
+- Do NOT modify any source code files
+- Only create/modify files within ` + "`" + `.qoder/repowiki/` + "`" + `
 `
     os.WriteFile(cmdPath, []byte(content), 0644)
 }
@@ -477,3 +515,68 @@ func spawnBackground(gitRoot string, commitHash string) {
     logFile.Close()
 }
 ```
+
+## Logs Command
+
+**File**: `cmd/repowiki/logs.go`
+
+Displays the most recent log file from hook executions.
+
+### Implementation
+
+```go
+func handleLogs(args []string) {
+    gitRoot, err := git.FindRoot()
+    if err != nil {
+        fmt.Fprintf(os.Stderr, "Error: not a git repository\n")
+        os.Exit(1)
+    }
+
+    logDir := config.LogPath(gitRoot)
+    entries, err := os.ReadDir(logDir)
+    if err != nil {
+        fmt.Println("No logs yet.")
+        return
+    }
+
+    // Sort by name descending (newest first)
+    sort.Slice(entries, func(i, j int) bool {
+        return entries[i].Name() > entries[j].Name()
+    })
+
+    // Show latest log
+    if len(entries) == 0 {
+        fmt.Println("No logs yet.")
+        return
+    }
+
+    latest := entries[0]
+    data, err := os.ReadFile(filepath.Join(logDir, latest.Name()))
+    if err != nil {
+        fmt.Fprintf(os.Stderr, "Error reading log: %v\n", err)
+        os.Exit(1)
+    }
+
+    fmt.Printf("=== %s ===\n%s", latest.Name(), string(data))
+}
+```
+
+### Features
+
+- **Automatic sorting**: Logs are sorted by filename in descending order (newest first)
+- **Latest log display**: Shows only the most recent log file
+- **Log directory**: Reads from `.repowiki/logs/`
+- **Graceful handling**: Shows "No logs yet." if log directory is empty or doesn't exist
+
+### Usage
+
+```bash
+# View the most recent log
+repowiki logs
+```
+
+### Log Location
+
+Logs are stored in `.repowiki/logs/` with timestamped filenames. Common log files include:
+- `hook.log` - Output from hook-triggered updates
+- Date-stamped logs for specific runs

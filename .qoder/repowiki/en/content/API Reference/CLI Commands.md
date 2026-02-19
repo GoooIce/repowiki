@@ -8,6 +8,7 @@ Source files referenced:
 - [cmd/repowiki/status.go](/to/cmd/repowiki/status.go)
 - [cmd/repowiki/generate.go](/to/cmd/repowiki/generate.go)
 - [cmd/repowiki/update.go](/to/cmd/repowiki/update.go)
+- [cmd/repowiki/logs.go](/to/cmd/repowiki/logs.go)
 </cite>
 
 ## Table of Contents
@@ -21,6 +22,7 @@ Source files referenced:
 - [update](#update)
 - [version](#version)
 - [help](#help)
+- [logs](#logs)
 
 ## Command Reference
 
@@ -36,6 +38,7 @@ Commands:
   status      Show current status and configuration
   generate    Run full wiki generation
   update      Run incremental wiki update for recent changes
+  logs        Show the most recent log file
   version     Show version
 
 Flags for 'enable':
@@ -376,6 +379,7 @@ Examples:
   repowiki enable --force            # Reinstall hook
   repowiki generate                  # Full wiki generation
   repowiki update --commit abc123    # Update for specific commit
+  repowiki logs                      # View most recent log
   repowiki disable                   # Remove hook
 ```
 
@@ -416,3 +420,52 @@ The background process:
 - Runs detached from the parent (using `Setsid: true`)
 - Outputs to `.repowiki/logs/hook.log`
 - Does not block the user's terminal
+
+## logs
+
+Show the most recent log file from hook executions.
+
+### Synopsis
+
+```
+repowiki logs
+```
+
+### Description
+
+Displays the contents of the most recent log file. Logs are sorted by filename in descending order, showing the newest log first.
+
+### Examples
+
+```bash
+repowiki logs
+```
+
+### Exit Codes
+
+| Code | Meaning |
+|------|---------|
+| 0 | Success |
+| 1 | Error (not a git repository, failed to read log) |
+
+### Output Example
+
+```
+=== hook.log ===
+2026-02-19T19:30:00Z Starting wiki update for commit abc123...
+2026-02-19T19:30:05Z Changed files: 5
+2026-02-19T19:30:10Z Running incremental update...
+2026-02-19T19:30:45Z Wiki update complete
+2026-02-19T19:30:46Z Auto-committing changes...
+2026-02-19T19:30:47Z Done
+```
+
+### Log Location
+
+Logs are stored in `.repowiki/logs/` directory. Common log files include:
+- `hook.log` - Output from hook-triggered updates
+- Date-stamped logs for specific runs (e.g., `2026-02-19.log`)
+
+### Implementation
+
+The command reads all files from `.repowiki/logs/`, sorts them by name descending (newest first), and displays the contents of the first (most recent) log file.

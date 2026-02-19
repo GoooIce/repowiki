@@ -24,16 +24,16 @@
     {
       "id": "c5d8e1b4a7f0c3d6e9b2a5f8c1d4e7a0",
       "path": "cmd/repowiki/main.go",
-      "line_range": "1-71",
+      "line_range": "1-73",
       "gmt_create": "2026-02-19T16:26:00Z",
-      "gmt_modified": "2026-02-19T16:26:00Z"
+      "gmt_modified": "2026-02-19T19:30:00Z"
     },
     {
       "id": "e3b6c9f2a5d8e1b4c7f0a3d6e9b2c5f8",
       "path": "cmd/repowiki/enable.go",
-      "line_range": "1-119",
+      "line_range": "1-122",
       "gmt_create": "2026-02-19T16:26:00Z",
-      "gmt_modified": "2026-02-19T16:26:00Z"
+      "gmt_modified": "2026-02-19T19:30:00Z"
     },
     {
       "id": "f1a4d7e0b3c6f9a2d5e8b1c4f7a0d3e6",
@@ -71,6 +71,13 @@
       "gmt_modified": "2026-02-19T16:26:00Z"
     },
     {
+      "id": "f9d2e5a8b1c4f7e0a3d6c9b2e5f8a1c4",
+      "path": "cmd/repowiki/logs.go",
+      "line_range": "1-47",
+      "gmt_create": "2026-02-19T19:30:00Z",
+      "gmt_modified": "2026-02-19T19:30:00Z"
+    },
+    {
       "id": "c0f3a6d9e2b5c8f1a4e7d0a3f6c9b2e5",
       "path": "internal/config/config.go",
       "line_range": "1-98",
@@ -87,9 +94,9 @@
     {
       "id": "a6d9f2c5b8e1a4f7d0c3b6e9a2d5f8c1",
       "path": "internal/hook/hook.go",
-      "line_range": "1-94",
+      "line_range": "1-98",
       "gmt_create": "2026-02-19T16:26:00Z",
-      "gmt_modified": "2026-02-19T16:26:00Z"
+      "gmt_modified": "2026-02-19T19:30:00Z"
     },
     {
       "id": "d4e7a0f3c6b9e2d5a8f1c4b7e0a3d6f9",
