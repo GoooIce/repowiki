@@ -1,0 +1,5 @@
+bin/
+*.exe
+.repowiki/.repowiki.lock
+.repowiki/.committing
+.repowiki/logs/
