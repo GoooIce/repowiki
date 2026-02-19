@@ -1,0 +1,158 @@
+{
+  "code_snippets": [
+    {
+      "id": "d41d8cd98f00b204e9800998ecf8427e",
+      "path": "README.md",
+      "line_range": "1-88",
+      "gmt_create": "2026-02-19T16:30:00Z",
+      "gmt_modified": "2026-02-19T16:30:00Z"
+    },
+    {
+      "id": "a3f5c8e9d2b1a4f7e6c3d8b5a2f1e4c7",
+      "path": "go.mod",
+      "line_range": "1-3",
+      "gmt_create": "2026-02-19T16:26:00Z",
+      "gmt_modified": "2026-02-19T16:26:00Z"
+    },
+    {
+      "id": "b7e2a5f8c1d4e7a0b3c6d9f2a5b8c1e4",
+      "path": "Makefile",
+      "line_range": "1-17",
+      "gmt_create": "2026-02-19T16:26:00Z",
+      "gmt_modified": "2026-02-19T16:26:00Z"
+    },
+    {
+      "id": "c5d8e1b4a7f0c3d6e9b2a5f8c1d4e7a0",
+      "path": "cmd/repowiki/main.go",
+      "line_range": "1-71",
+      "gmt_create": "2026-02-19T16:26:00Z",
+      "gmt_modified": "2026-02-19T16:26:00Z"
+    },
+    {
+      "id": "e3b6c9f2a5d8e1b4c7f0a3d6e9b2c5f8",
+      "path": "cmd/repowiki/enable.go",
+      "line_range": "1-119",
+      "gmt_create": "2026-02-19T16:26:00Z",
+      "gmt_modified": "2026-02-19T16:26:00Z"
+    },
+    {
+      "id": "f1a4d7e0b3c6f9a2d5e8b1c4f7a0d3e6",
+      "path": "cmd/repowiki/disable.go",
+      "line_range": "1-35",
+      "gmt_create": "2026-02-19T16:26:00Z",
+      "gmt_modified": "2026-02-19T16:26:00Z"
+    },
+    {
+      "id": "a9c2f5b8e1d4a7f0c3b6e9d2a5f8c1b4",
+      "path": "cmd/repowiki/status.go",
+      "line_range": "1-88",
+      "gmt_create": "2026-02-19T16:26:00Z",
+      "gmt_modified": "2026-02-19T16:26:00Z"
+    },
+    {
+      "id": "d7e0a3f6c9b2e5d8a1f4c7b0e3a6d9f2",
+      "path": "cmd/repowiki/generate.go",
+      "line_range": "1-38",
+      "gmt_create": "2026-02-19T16:26:00Z",
+      "gmt_modified": "2026-02-19T16:26:00Z"
+    },
+    {
+      "id": "b5e8c1f4a7d0e3b6c9f2a5d8e1b4c7f0",
+      "path": "cmd/repowiki/update.go",
+      "line_range": "1-106",
+      "gmt_create": "2026-02-19T16:26:00Z",
+      "gmt_modified": "2026-02-19T16:26:00Z"
+    },
+    {
+      "id": "e2b5c8f1a4e7d0a3f6c9b2e5d8a1f4c7",
+      "path": "cmd/repowiki/hooks.go",
+      "line_range": "1-93",
+      "gmt_create": "2026-02-19T16:26:00Z",
+      "gmt_modified": "2026-02-19T16:26:00Z"
+    },
+    {
+      "id": "c0f3a6d9e2b5c8f1a4e7d0a3f6c9b2e5",
+      "path": "internal/config/config.go",
+      "line_range": "1-98",
+      "gmt_create": "2026-02-19T16:26:00Z",
+      "gmt_modified": "2026-02-19T16:26:00Z"
+    },
+    {
+      "id": "f8c1b4e7a0d3f6c9e2b5a8d1f4c7e0a3",
+      "path": "internal/git/git.go",
+      "line_range": "1-80",
+      "gmt_create": "2026-02-19T16:26:00Z",
+      "gmt_modified": "2026-02-19T16:26:00Z"
+    },
+    {
+      "id": "a6d9f2c5b8e1a4f7d0c3b6e9a2d5f8c1",
+      "path": "internal/hook/hook.go",
+      "line_range": "1-94",
+      "gmt_create": "2026-02-19T16:26:00Z",
+      "gmt_modified": "2026-02-19T16:26:00Z"
+    },
+    {
+      "id": "d4e7a0f3c6b9e2d5a8f1c4b7e0a3d6f9",
+      "path": "internal/lockfile/lockfile.go",
+      "line_range": "1-94",
+      "gmt_create": "2026-02-19T16:26:00Z",
+      "gmt_modified": "2026-02-19T16:26:00Z"
+    },
+    {
+      "id": "b2e5d8a1f4c7e0a3f6c9b2e5d8a1f4c7",
+      "path": "internal/wiki/wiki.go",
+      "line_range": "1-100",
+      "gmt_create": "2026-02-19T16:26:00Z",
+      "gmt_modified": "2026-02-19T16:26:00Z"
+    },
+    {
+      "id": "e0a3f6c9b2e5d8a1f4c7e0a3f6c9b2e5",
+      "path": "internal/wiki/qoder.go",
+      "line_range": "1-88",
+      "gmt_create": "2026-02-19T16:26:00Z",
+      "gmt_modified": "2026-02-19T16:26:00Z"
+    },
+    {
+      "id": "c8f1b4e7a0d3f6c9b2e5d8a1f4c7e0a3",
+      "path": "internal/wiki/commit.go",
+      "line_range": "1-61",
+      "gmt_create": "2026-02-19T16:26:00Z",
+      "gmt_modified": "2026-02-19T16:26:00Z"
+    },
+    {
+      "id": "f6c9b2e5d8a1f4c7e0a3f6c9b2e5d8a1",
+      "path": "internal/wiki/detect.go",
+      "line_range": "1-146",
+      "gmt_create": "2026-02-19T16:26:00Z",
+      "gmt_modified": "2026-02-19T16:26:00Z"
+    },
+    {
+      "id": "a4f7d0c3b6e9a2d5f8c1b4e7a0d3f6c9",
+      "path": "internal/wiki/prompt.go",
+      "line_range": "1-77",
+      "gmt_create": "2026-02-19T16:26:00Z",
+      "gmt_modified": "2026-02-19T16:26:00Z"
+    },
+    {
+      "id": "d2a5f8c1b4e7a0d3f6c9b2e5d8a1f4c7",
+      "path": ".repowiki/config.json",
+      "line_range": "1-19",
+      "gmt_create": "2026-02-19T16:30:00Z",
+      "gmt_modified": "2026-02-19T16:30:00Z"
+    },
+    {
+      "id": "e9b2c5f8a1d4e7a0c3b6f9a2d5e8c1f4",
+      "path": ".gitignore",
+      "line_range": "1-6",
+      "gmt_create": "2026-02-19T16:31:00Z",
+      "gmt_modified": "2026-02-19T16:31:00Z"
+    },
+    {
+      "id": "c7e0a3f6b9c2e5d8a1f4c7b0e3a6d9f2",
+      "path": ".qoder/commands/update-wiki.md",
+      "line_range": "1-28",
+      "gmt_create": "2026-02-19T16:31:00Z",
+      "gmt_modified": "2026-02-19T16:31:00Z"
+    }
+  ]
+}

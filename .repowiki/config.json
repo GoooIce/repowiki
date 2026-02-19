@@ -1,0 +1,18 @@
+{
+  "enabled": true,
+  "qodercli_path": "qodercli",
+  "model": "auto",
+  "max_turns": 50,
+  "language": "en",
+  "auto_commit": true,
+  "commit_prefix": "[repowiki]",
+  "excluded_paths": [
+    ".qoder/repowiki/",
+    ".repowiki/",
+    "node_modules/",
+    "vendor/",
+    ".git/"
+  ],
+  "wiki_path": ".qoder/repowiki",
+  "full_generate_threshold": 20
+}

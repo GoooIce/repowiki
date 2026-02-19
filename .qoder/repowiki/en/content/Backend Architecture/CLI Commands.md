@@ -1,0 +1,479 @@
+# CLI Commands
+
+<cite>
+Source files referenced:
+- [cmd/repowiki/main.go](/to/cmd/repowiki/main.go)
+- [cmd/repowiki/enable.go](/to/cmd/repowiki/enable.go)
+- [cmd/repowiki/disable.go](/to/cmd/repowiki/disable.go)
+- [cmd/repowiki/status.go](/to/cmd/repowiki/status.go)
+- [cmd/repowiki/generate.go](/to/cmd/repowiki/generate.go)
+- [cmd/repowiki/update.go](/to/cmd/repowiki/update.go)
+- [cmd/repowiki/hooks.go](/to/cmd/repowiki/hooks.go)
+</cite>
+
+## Table of Contents
+
+- [Command Overview](#command-overview)
+- [Command Router](#command-router)
+- [Enable Command](#enable-command)
+- [Disable Command](#disable-command)
+- [Status Command](#status-command)
+- [Generate Command](#generate-command)
+- [Update Command](#update-command)
+- [Hooks Command](#hooks-command)
+
+## Command Overview
+
+The repowiki CLI follows a standard command-based architecture with a central router dispatching to specific handlers.
+
+```mermaid
+flowchart LR
+    CLI["repowiki CLI"] --> Router["Command Router"]
+    Router --> Enable["enable"]
+    Router --> Disable["disable"]
+    Router --> Status["status"]
+    Router --> Generate["generate"]
+    Router --> Update["update"]
+    Router --> Hooks["hooks"]
+    Router --> Version["version"]
+```
+
+## Command Router
+
+The main entry point in `cmd/repowiki/main.go` handles command routing:
+
+```go
+const Version = "0.1.0"
+
+func main() {
+    if len(os.Args) < 2 {
+        printUsage()
+        os.Exit(0)
+    }
+
+    switch os.Args[1] {
+    case "enable":
+        handleEnable(os.Args[2:])
+    case "disable":
+        handleDisable(os.Args[2:])
+    case "status":
+        handleStatus(os.Args[2:])
+    case "generate":
+        handleGenerate(os.Args[2:])
+    case "update":
+        handleUpdate(os.Args[2:])
+    case "hooks":
+        handleHooks(os.Args[2:])
+    case "version", "--version", "-v":
+        fmt.Printf("repowiki v%s\n", Version)
+    case "help", "--help", "-h":
+        printUsage()
+    default:
+        fmt.Fprintf(os.Stderr, "Unknown command: %s\n", os.Args[1])
+        os.Exit(1)
+    }
+}
+```
+
+## Enable Command
+
+**File**: `cmd/repowiki/enable.go`
+
+Installs repowiki into the current git repository.
+
+### Flags
+
+| Flag | Type | Description |
+|------|------|-------------|
+| `--force` | bool | Reinstall hook even if already present |
+| `--qodercli-path` | string | Path to qodercli binary |
+| `--model` | string | Qoder model level |
+| `--no-auto-commit` | bool | Don't auto-commit wiki changes |
+
+### Implementation
+
+```go
+func handleEnable(args []string) {
+    fs := flag.NewFlagSet("enable", flag.ExitOnError)
+    force := fs.Bool("force", false, "reinstall hook even if present")
+    qoderPath := fs.String("qodercli-path", "", "path to qodercli binary")
+    model := fs.String("model", "", "qoder model level")
+    noAutoCommit := fs.Bool("no-auto-commit", false, "don't auto-commit wiki changes")
+    fs.Parse(args)
+
+    // 1. Validate git repository
+    gitRoot, err := git.FindRoot()
+    if err != nil {
+        fmt.Fprintf(os.Stderr, "Error: not a git repository\n")
+        os.Exit(1)
+    }
+
+    // 2. Load or create config
+    cfg, err := config.Load(gitRoot)
+    if err != nil {
+        cfg = config.Default()
+    }
+
+    // 3. Apply flag overrides
+    if *qoderPath != "" {
+        cfg.QoderCLIPath = *qoderPath
+    }
+    if *model != "" {
+        cfg.Model = *model
+    }
+    if *noAutoCommit {
+        cfg.AutoCommit = false
+    }
+    cfg.Enabled = true
+
+    // 4. Validate qodercli
+    testCfg := *cfg
+    _, findErr := wiki.FindQoderCLI(&testCfg)
+    if findErr != nil {
+        fmt.Fprintf(os.Stderr, "Warning: %v\n", findErr)
+    }
+
+    // 5. Save config and install hook
+    config.Save(gitRoot, cfg)
+    hook.Install(gitRoot, *force)
+    createQoderCommand(gitRoot)
+}
+```
+
+### Qoder Command Creation
+
+The enable command also creates a custom Qoder command:
+
+```go
+func createQoderCommand(gitRoot string) {
+    cmdDir := filepath.Join(gitRoot, ".qoder", "commands")
+    os.MkdirAll(cmdDir, 0755)
+
+    cmdPath := filepath.Join(cmdDir, "update-wiki.md")
+    content := `---
+description: Update the repository wiki documentation
+---
+
+You are a technical documentation specialist...
+`
+    os.WriteFile(cmdPath, []byte(content), 0644)
+}
+```
+
+## Disable Command
+
+**File**: `cmd/repowiki/disable.go`
+
+Removes repowiki from the current project.
+
+```go
+func handleDisable(args []string) {
+    gitRoot, err := git.FindRoot()
+    if err != nil {
+        fmt.Fprintf(os.Stderr, "Error: not a git repository\n")
+        os.Exit(1)
+    }
+
+    // 1. Remove hook
+    if err := hook.Uninstall(gitRoot); err != nil {
+        fmt.Fprintf(os.Stderr, "Error removing hook: %v\n", err)
+        os.Exit(1)
+    }
+
+    // 2. Update config
+    cfg, err := config.Load(gitRoot)
+    if err == nil {
+        cfg.Enabled = false
+        config.Save(gitRoot, cfg)
+    }
+
+    fmt.Printf("repowiki disabled in %s\n", gitRoot)
+    fmt.Printf("Wiki files in .qoder/repowiki/ are preserved.\n")
+}
+```
+
+## Status Command
+
+**File**: `cmd/repowiki/status.go`
+
+Displays current configuration and status.
+
+```go
+func handleStatus(args []string) {
+    gitRoot, err := git.FindRoot()
+    if err != nil {
+        fmt.Fprintf(os.Stderr, "Error: not a git repository\n")
+        os.Exit(1)
+    }
+
+    fmt.Printf("repowiki v%s\n\n", Version)
+
+    // Config status
+    cfg, cfgErr := config.Load(gitRoot)
+    if cfgErr != nil {
+        fmt.Printf("  Status:       not configured\n")
+        return
+    }
+
+    if cfg.Enabled {
+        fmt.Printf("  Status:       enabled\n")
+    } else {
+        fmt.Printf("  Status:       disabled\n")
+    }
+
+    // Hook status
+    if hook.IsInstalled(gitRoot) {
+        fmt.Printf("  Hook:         installed\n")
+    } else {
+        fmt.Printf("  Hook:         not installed\n")
+    }
+
+    // Qoder CLI status
+    cliPath, qoderErr := wiki.FindQoderCLI(cfg)
+    if qoderErr == nil {
+        fmt.Printf("  Qoder CLI:    %s\n", cliPath)
+    } else {
+        fmt.Printf("  Qoder CLI:    not found\n")
+    }
+
+    // Wiki status
+    contentDir := filepath.Join(gitRoot, cfg.WikiPath, cfg.Language, "content")
+    if entries, err := os.ReadDir(contentDir); err == nil {
+        count := countMdFiles(contentDir)
+        fmt.Printf("  Wiki pages:   %d\n", count)
+    }
+
+    // Config details
+    fmt.Printf("  Model:        %s\n", cfg.Model)
+    fmt.Printf("  Auto-commit:  %v\n", cfg.AutoCommit)
+}
+```
+
+## Generate Command
+
+**File**: `cmd/repowiki/generate.go`
+
+Performs full wiki generation from scratch.
+
+```go
+func handleGenerate(args []string) {
+    gitRoot, err := git.FindRoot()
+    if err != nil {
+        fmt.Fprintf(os.Stderr, "Error: not a git repository\n")
+        os.Exit(1)
+    }
+
+    cfg, err := config.Load(gitRoot)
+    if err != nil {
+        fmt.Fprintf(os.Stderr, "Error: repowiki not configured\n")
+        os.Exit(1)
+    }
+
+    fmt.Println("Starting full wiki generation...")
+
+    if err := wiki.FullGenerate(gitRoot, cfg); err != nil {
+        fmt.Fprintf(os.Stderr, "Error: %v\n", err)
+        os.Exit(1)
+    }
+
+    // Update last run tracking
+    head, _ := git.HeadCommit(gitRoot)
+    config.UpdateLastRun(gitRoot, head)
+
+    fmt.Println("Wiki generation complete.")
+}
+```
+
+## Update Command
+
+**File**: `cmd/repowiki/update.go`
+
+Performs incremental or full update based on changed files.
+
+### Flags
+
+| Flag | Type | Description |
+|------|------|-------------|
+| `--commit` | string | Specific commit hash to process |
+| `--from-hook` | bool | Internal: indicates hook-triggered run |
+
+### Implementation
+
+```go
+func handleUpdate(args []string) {
+    fs := flag.NewFlagSet("update", flag.ExitOnError)
+    commitHash := fs.String("commit", "", "specific commit hash")
+    fromHook := fs.Bool("from-hook", false, "internal: hook-triggered")
+    fs.Parse(args)
+
+    // 1. Get git root and config
+    gitRoot, err := git.FindRoot()
+    cfg, err := config.Load(gitRoot)
+
+    // 2. Determine commit to process
+    hash := *commitHash
+    if hash == "" {
+        hash, err = git.HeadCommit(gitRoot)
+    }
+
+    // 3. Get changed files
+    var changedFiles []string
+    if cfg.LastCommitHash != "" && cfg.LastCommitHash != hash {
+        changedFiles, err = git.ChangedFilesSince(gitRoot, cfg.LastCommitHash)
+    } else {
+        changedFiles, err = git.ChangedFilesInCommit(gitRoot, hash)
+    }
+
+    // 4. Filter excluded paths
+    changedFiles = filterExcluded(changedFiles, cfg.ExcludedPaths)
+
+    if len(changedFiles) == 0 {
+        if !*fromHook {
+            fmt.Println("No relevant file changes detected.")
+        }
+        return
+    }
+
+    // 5. Decide: full generate or incremental
+    if !wiki.Exists(gitRoot, cfg) || len(changedFiles) > cfg.FullGenerateThreshold {
+        wiki.FullGenerate(gitRoot, cfg)
+    } else {
+        wiki.IncrementalUpdate(gitRoot, cfg, changedFiles)
+    }
+
+    // 6. Update last run
+    config.UpdateLastRun(gitRoot, hash)
+}
+```
+
+### File Filtering
+
+```go
+func filterExcluded(files []string, excluded []string) []string {
+    var result []string
+    for _, f := range files {
+        skip := false
+        for _, ex := range excluded {
+            if len(f) >= len(ex) && f[:len(ex)] == ex {
+                skip = true
+                break
+            }
+        }
+        if !skip {
+            result = append(result, f)
+        }
+    }
+    return result
+}
+```
+
+## Hooks Command
+
+**File**: `cmd/repowiki/hooks.go`
+
+Internal entry point called by the git post-commit hook.
+
+```mermaid
+sequenceDiagram
+    participant Git as Git Hook
+    participant Hooks as handleHooks
+    participant Sentinel as Sentinel Check
+    participant Lock as Lock Check
+    participant Prefix as Prefix Check
+    participant Spawn as spawnBackground
+
+    Git->>Hooks: repowiki hooks post-commit
+    Hooks->>Sentinel: IsSentinelPresent?
+    Sentinel-->>Hooks: false
+    Hooks->>Lock: lockfile.IsLocked?
+    Lock-->>Hooks: false
+    Hooks->>Hooks: Load config
+    Hooks->>Hooks: Get HEAD commit
+    Hooks->>Prefix: Check commit prefix
+    Prefix-->>Hooks: not [repowiki]
+    Hooks->>Spawn: Spawn background process
+    Spawn->>Spawn: exec.Command(self, "update", "--from-hook", ...)
+    Spawn->>Spawn: Start detached process
+```
+
+### Implementation
+
+```go
+func handleHooks(args []string) {
+    if len(args) == 0 || args[0] != "post-commit" {
+        return
+    }
+
+    gitRoot, err := git.FindRoot()
+    if err != nil {
+        return
+    }
+
+    // Loop prevention layer 1: sentinel file
+    if wiki.IsSentinelPresent(gitRoot) {
+        return
+    }
+
+    // Loop prevention layer 2: lock file
+    if lockfile.IsLocked(gitRoot) {
+        return
+    }
+
+    // Load config
+    cfg, err := config.Load(gitRoot)
+    if err != nil || !cfg.Enabled {
+        return
+    }
+
+    // Get current commit
+    commitHash, err := git.HeadCommit(gitRoot)
+    if err != nil {
+        return
+    }
+
+    // Loop prevention layer 3: commit message prefix
+    commitMsg, err := git.CommitMessage(gitRoot, commitHash)
+    if err != nil {
+        return
+    }
+    if strings.HasPrefix(strings.TrimSpace(commitMsg), cfg.CommitPrefix) {
+        return
+    }
+
+    // All checks passed — spawn background update
+    spawnBackground(gitRoot, commitHash)
+}
+```
+
+### Background Process Spawning
+
+```go
+func spawnBackground(gitRoot string, commitHash string) {
+    self, err := os.Executable()
+    if err != nil {
+        return
+    }
+
+    logDir := config.LogPath(gitRoot)
+    os.MkdirAll(logDir, 0755)
+
+    logFile, err := os.OpenFile(
+        fmt.Sprintf("%s/hook.log", logDir),
+        os.O_CREATE|os.O_APPEND|os.O_WRONLY,
+        0644,
+    )
+    if err != nil {
+        return
+    }
+
+    cmd := exec.Command(self, "update", "--from-hook", "--commit", commitHash)
+    cmd.Dir = gitRoot
+    cmd.Stdout = logFile
+    cmd.Stderr = logFile
+    cmd.SysProcAttr = &syscall.SysProcAttr{Setsid: true}
+
+    cmd.Start()
+    // Do NOT call cmd.Wait()
+    logFile.Close()
+}
+```
