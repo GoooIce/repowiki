@@ -2,10 +2,10 @@
 
 <cite>
 Source files referenced:
-- [README.md](/to/README.md)
-- [cmd/repowiki/enable.go](/to/cmd/repowiki/enable.go)
-- [cmd/repowiki/main.go](/to/cmd/repowiki/main.go)
-- [internal/config/config.go](/to/internal/config/config.go)
+- [README.md](file://README.md)
+- [cmd/repowiki/enable.go](file://cmd/repowiki/enable.go)
+- [cmd/repowiki/main.go](file://cmd/repowiki/main.go)
+- [internal/config/config.go](file://internal/config/config.go)
 </cite>
 
 ## Table of Contents
@@ -24,8 +24,10 @@ Before using repowiki, ensure you have:
 
 1. **Git repository** with at least one commit
 2. **Go 1.22+** installed (for building from source)
-3. **Qoder CLI** (`qodercli`) installed and accessible
-4. **Qoder account** — free or Pro (needed for `qodercli` authentication)
+3. **One of the supported AI engines** installed and authenticated:
+   - **Qoder CLI** (`qodercli`)
+   - **Claude Code** (`claude`)
+   - **OpenAI Codex CLI** (`codex`)
 
 ### Checking Requirements
 
@@ -36,8 +38,12 @@ git --version
 # Verify Go
 go version
 
-# Verify Qoder CLI
+# Verify your chosen AI engine
 qodercli --version
+# or
+claude --version
+# or
+codex --version
 ```
 
 ## Installation
@@ -100,14 +106,23 @@ This command:
 ### Enable Options
 
 ```bash
+# Enable with Qoder (default)
+repowiki enable
+
+# Enable with Claude Code
+repowiki enable --engine claude-code
+
+# Enable with OpenAI Codex
+repowiki enable --engine codex
+
+# Enable with specific model
+repowiki enable --engine claude-code --model sonnet
+
 # Force reinstall if already enabled
 repowiki enable --force
 
-# Specify Qoder CLI path
-repowiki enable --qodercli-path /path/to/qodercli
-
-# Set model level
-repowiki enable --model performance
+# Specify custom engine binary path
+repowiki enable --engine-path /path/to/engine
 
 # Disable auto-commit
 repowiki enable --no-auto-commit
@@ -128,19 +143,26 @@ func handleEnable(args []string) {
     }
     
     // 3. Apply flag overrides
-    if *qoderPath != "" {
-        cfg.QoderCLIPath = *qoderPath
+    if *engine != "" {
+        if !config.IsValidEngine(*engine) {
+            fmt.Fprintf(os.Stderr, "Error: unknown engine %q\n", *engine)
+            os.Exit(1)
+        }
+        cfg.Engine = *engine
+    }
+    if *enginePath != "" {
+        cfg.EnginePath = *enginePath
     }
     cfg.Enabled = true
     
-    // 4. Validate qodercli
-    _, findErr := wiki.FindQoderCLI(&testCfg)
+    // 4. Validate engine binary
+    _, findErr := wiki.FindEngineBinary(cfg)
     
     // 5. Save config
     config.Save(gitRoot, cfg)
     
     // 6. Install git hook
-    hook.Install(gitRoot, *force)
+    hook.Install(gitRoot, *force, selfPath)
     
     // 7. Create Qoder command
     createQoderCommand(gitRoot)
@@ -205,8 +227,9 @@ Located at `.repowiki/config.json`:
 ```json
 {
   "enabled": true,
-  "qodercli_path": "qodercli",
-  "model": "auto",
+  "engine": "qoder",
+  "engine_path": "",
+  "model": "",
   "max_turns": 50,
   "language": "en",
   "auto_commit": true,
@@ -228,8 +251,9 @@ Located at `.repowiki/config.json`:
 | Option | Type | Default | Description |
 |--------|------|---------|-------------|
 | `enabled` | boolean | `true` | Whether repowiki is active |
-| `qodercli_path` | string | `"qodercli"` | Path to Qoder CLI binary |
-| `model` | string | `"auto"` | AI model level (auto, efficient, performance, ultimate) |
+| `engine` | string | `"qoder"` | AI engine: `qoder`, `claude-code`, `codex` |
+| `engine_path` | string | `""` | Override path to engine CLI binary (auto-detected if empty) |
+| `model` | string | `""` | Engine-specific model (e.g., `sonnet` for Claude, `performance` for Qoder) |
 | `max_turns` | integer | `50` | Maximum AI interaction turns |
 | `language` | string | `"en"` | Wiki language code |
 | `auto_commit` | boolean | `true` | Auto-commit wiki changes |
@@ -258,15 +282,15 @@ Error: repowiki not configured. Run 'repowiki enable' first.
 
 **Solution**: Run `repowiki enable` to initialize configuration.
 
-#### "qodercli not found"
+#### "engine binary not found"
 
 ```
 Warning: qodercli not found
 ```
 
-**Solution**: Install Qoder or specify path:
+**Solution**: Install the AI engine or specify path:
 ```bash
-repowiki enable --qodercli-path /Applications/Qoder.app/.../qodercli
+repowiki enable --engine-path /Applications/Qoder.app/.../qodercli
 ```
 
 #### "another repowiki process is running"
@@ -288,8 +312,9 @@ Example output:
 repowiki v0.1.0
 
   Status:       enabled
+  Engine:       qoder
   Hook:         installed (.git/hooks/post-commit)
-  Qoder CLI:    /Applications/Qoder.app/.../qodercli
+  Binary:       /usr/local/bin/qodercli
   Wiki path:    .qoder/repowiki/en/content/ (12 pages)
   Model:        auto
   Auto-commit:  true

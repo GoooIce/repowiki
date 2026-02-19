@@ -2,9 +2,9 @@
 
 <cite>
 Source files referenced:
-- [internal/config/config.go](/to/internal/config/config.go)
-- [.repowiki/config.json](/to/.repowiki/config.json)
-- [.gitignore](/to/.gitignore)
+- [internal/config/config.go](file://internal/config/config.go)
+- [.repowiki/config.json](file://.repowiki/config.json)
+- [.gitignore](file://.gitignore)
 </cite>
 
 ## Table of Contents
@@ -25,8 +25,9 @@ repowiki stores its configuration in `.repowiki/config.json`. This file is creat
 ```json
 {
   "enabled": true,
-  "qodercli_path": "qodercli",
-  "model": "auto",
+  "engine": "qoder",
+  "engine_path": "",
+  "model": "",
   "max_turns": 50,
   "language": "en",
   "auto_commit": true,
@@ -52,19 +53,35 @@ repowiki stores its configuration in `.repowiki/config.json`. This file is creat
 | Option | Type | Default | Description |
 |--------|------|---------|-------------|
 | `enabled` | boolean | `true` | Master switch for repowiki functionality |
-| `qodercli_path` | string | `"qodercli"` | Path to the Qoder CLI binary |
-| `model` | string | `"auto"` | AI model level for wiki generation |
+| `engine` | string | `"qoder"` | AI engine: `qoder`, `claude-code`, or `codex` |
+| `engine_path` | string | `""` | Override path to engine CLI binary |
+| `model` | string | `""` | Engine-specific model for wiki generation |
 | `max_turns` | integer | `50` | Maximum AI interaction turns per generation |
 | `language` | string | `"en"` | Language code for generated wiki |
 
-### Model Levels
+### Supported Engines
 
-| Level | Description |
-|-------|-------------|
-| `auto` | Automatically select appropriate model |
-| `efficient` | Faster, less detailed generation |
-| `performance` | Balanced speed and quality |
-| `ultimate` | Highest quality, slower generation |
+| Engine | CLI Binary | Description |
+|--------|-----------|-------------|
+| `qoder` | `qodercli` | Qoder CLI (default) |
+| `claude-code` | `claude` | Claude Code by Anthropic |
+| `codex` | `codex` | OpenAI Codex CLI |
+
+### Model Selection
+
+Model values are engine-specific:
+
+**Qoder CLI:**
+- `""` (empty) - Use Qoder default
+- `efficient` - Faster, less detailed generation
+- `performance` - Balanced speed and quality
+- `ultimate` - Highest quality, slower generation
+
+**Claude Code:**
+- `""` (empty) - Use Claude default
+- `sonnet` - Claude Sonnet model
+- `opus` - Claude Opus model
+- `haiku` - Claude Haiku model
 
 ### Commit Settings
 
@@ -244,11 +261,20 @@ You can edit `.repowiki/config.json` directly to change settings:
 }
 ```
 
-### Specify Qoder CLI Path
+### Specify Engine Path
 
 ```json
 {
-  "qodercli_path": "/Applications/Qoder.app/Contents/Resources/app/resources/bin/aarch64_darwin/qodercli"
+  "engine_path": "/Applications/Qoder.app/Contents/Resources/app/resources/bin/aarch64_darwin/qodercli"
+}
+```
+
+Or for Claude Code:
+
+```json
+{
+  "engine": "claude-code",
+  "engine_path": "/usr/local/bin/claude"
 }
 ```
 

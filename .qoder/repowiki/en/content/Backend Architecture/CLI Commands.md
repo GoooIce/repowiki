@@ -2,14 +2,14 @@
 
 <cite>
 Source files referenced:
-- [cmd/repowiki/main.go](/to/cmd/repowiki/main.go)
-- [cmd/repowiki/enable.go](/to/cmd/repowiki/enable.go)
-- [cmd/repowiki/disable.go](/to/cmd/repowiki/disable.go)
-- [cmd/repowiki/status.go](/to/cmd/repowiki/status.go)
-- [cmd/repowiki/generate.go](/to/cmd/repowiki/generate.go)
-- [cmd/repowiki/update.go](/to/cmd/repowiki/update.go)
-- [cmd/repowiki/hooks.go](/to/cmd/repowiki/hooks.go)
-- [cmd/repowiki/logs.go](/to/cmd/repowiki/logs.go)
+- [cmd/repowiki/main.go](file://cmd/repowiki/main.go)
+- [cmd/repowiki/enable.go](file://cmd/repowiki/enable.go)
+- [cmd/repowiki/disable.go](file://cmd/repowiki/disable.go)
+- [cmd/repowiki/status.go](file://cmd/repowiki/status.go)
+- [cmd/repowiki/generate.go](file://cmd/repowiki/generate.go)
+- [cmd/repowiki/update.go](file://cmd/repowiki/update.go)
+- [cmd/repowiki/hooks.go](file://cmd/repowiki/hooks.go)
+- [cmd/repowiki/logs.go](file://cmd/repowiki/logs.go)
 </cite>
 
 ## Table of Contents
@@ -90,9 +90,10 @@ Installs repowiki into the current git repository.
 
 | Flag | Type | Description |
 |------|------|-------------|
+| `--engine` | string | AI engine: `qoder`, `claude-code`, `codex` (default: `qoder`) |
+| `--engine-path` | string | Path to engine CLI binary |
+| `--model` | string | Engine-specific model level |
 | `--force` | bool | Reinstall hook even if already present |
-| `--qodercli-path` | string | Path to qodercli binary |
-| `--model` | string | Qoder model level |
 | `--no-auto-commit` | bool | Don't auto-commit wiki changes |
 
 ### Implementation
@@ -101,8 +102,9 @@ Installs repowiki into the current git repository.
 func handleEnable(args []string) {
     fs := flag.NewFlagSet("enable", flag.ExitOnError)
     force := fs.Bool("force", false, "reinstall hook even if present")
-    qoderPath := fs.String("qodercli-path", "", "path to qodercli binary")
-    model := fs.String("model", "", "qoder model level")
+    engine := fs.String("engine", "", "AI engine: qoder, claude-code, codex")
+    enginePath := fs.String("engine-path", "", "path to engine CLI binary")
+    model := fs.String("model", "", "model level (engine-specific)")
     noAutoCommit := fs.Bool("no-auto-commit", false, "don't auto-commit wiki changes")
     fs.Parse(args)
 
@@ -120,8 +122,15 @@ func handleEnable(args []string) {
     }
 
     // 3. Apply flag overrides
-    if *qoderPath != "" {
-        cfg.QoderCLIPath = *qoderPath
+    if *engine != "" {
+        if !config.IsValidEngine(*engine) {
+            fmt.Fprintf(os.Stderr, "Error: unknown engine %q\n", *engine)
+            os.Exit(1)
+        }
+        cfg.Engine = *engine
+    }
+    if *enginePath != "" {
+        cfg.EnginePath = *enginePath
     }
     if *model != "" {
         cfg.Model = *model
@@ -131,9 +140,8 @@ func handleEnable(args []string) {
     }
     cfg.Enabled = true
 
-    // 4. Validate qodercli
-    testCfg := *cfg
-    _, findErr := wiki.FindQoderCLI(&testCfg)
+    // 4. Validate engine binary is reachable
+    binPath, findErr := wiki.FindEngineBinary(cfg)
     if findErr != nil {
         fmt.Fprintf(os.Stderr, "Warning: %v\n", findErr)
     }
@@ -246,10 +254,11 @@ func handleStatus(args []string) {
 
     fmt.Printf("repowiki v%s\n\n", Version)
 
-    // Config status
+    // Config
     cfg, cfgErr := config.Load(gitRoot)
     if cfgErr != nil {
         fmt.Printf("  Status:       not configured\n")
+        fmt.Printf("  Run 'repowiki enable' to get started.\n")
         return
     }
 
@@ -259,31 +268,46 @@ func handleStatus(args []string) {
         fmt.Printf("  Status:       disabled\n")
     }
 
-    // Hook status
+    // Engine
+    fmt.Printf("  Engine:       %s\n", cfg.Engine)
+
+    // Hook
     if hook.IsInstalled(gitRoot) {
-        fmt.Printf("  Hook:         installed\n")
+        fmt.Printf("  Hook:         installed (.git/hooks/post-commit)\n")
     } else {
         fmt.Printf("  Hook:         not installed\n")
     }
 
-    // Qoder CLI status
-    cliPath, qoderErr := wiki.FindQoderCLI(cfg)
-    if qoderErr == nil {
-        fmt.Printf("  Qoder CLI:    %s\n", cliPath)
+    // Engine binary
+    binPath, engineErr := wiki.FindEngineBinary(cfg)
+    if engineErr == nil {
+        fmt.Printf("  Binary:       %s\n", binPath)
     } else {
-        fmt.Printf("  Qoder CLI:    not found\n")
+        fmt.Printf("  Binary:       not found (%s)\n", cfg.Engine)
     }
 
-    // Wiki status
+    // Wiki
     contentDir := filepath.Join(gitRoot, cfg.WikiPath, cfg.Language, "content")
     if entries, err := os.ReadDir(contentDir); err == nil {
         count := countMdFiles(contentDir)
-        fmt.Printf("  Wiki pages:   %d\n", count)
+        fmt.Printf("  Wiki path:    %s/%s/content/ (%d pages)\n", cfg.WikiPath, cfg.Language, count)
+    } else {
+        fmt.Printf("  Wiki path:    %s (not generated yet)\n", cfg.WikiPath)
     }
 
     // Config details
-    fmt.Printf("  Model:        %s\n", cfg.Model)
+    if cfg.Model != "" {
+        fmt.Printf("  Model:        %s\n", cfg.Model)
+    }
     fmt.Printf("  Auto-commit:  %v\n", cfg.AutoCommit)
+    fmt.Printf("  Max turns:    %d\n", cfg.MaxTurns)
+
+    if cfg.LastRun != "" {
+        fmt.Printf("  Last run:     %s\n", cfg.LastRun)
+    }
+    if cfg.LastCommitHash != "" {
+        fmt.Printf("  Last commit:  %s\n", cfg.LastCommitHash)
+    }
 }
 ```
 

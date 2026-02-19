@@ -2,13 +2,13 @@
 
 <cite>
 Source files referenced:
-- [cmd/repowiki/main.go](/to/cmd/repowiki/main.go)
-- [cmd/repowiki/enable.go](/to/cmd/repowiki/enable.go)
-- [cmd/repowiki/disable.go](/to/cmd/repowiki/disable.go)
-- [cmd/repowiki/status.go](/to/cmd/repowiki/status.go)
-- [cmd/repowiki/generate.go](/to/cmd/repowiki/generate.go)
-- [cmd/repowiki/update.go](/to/cmd/repowiki/update.go)
-- [cmd/repowiki/logs.go](/to/cmd/repowiki/logs.go)
+- [cmd/repowiki/main.go](file://cmd/repowiki/main.go)
+- [cmd/repowiki/enable.go](file://cmd/repowiki/enable.go)
+- [cmd/repowiki/disable.go](file://cmd/repowiki/disable.go)
+- [cmd/repowiki/status.go](file://cmd/repowiki/status.go)
+- [cmd/repowiki/generate.go](file://cmd/repowiki/generate.go)
+- [cmd/repowiki/update.go](file://cmd/repowiki/update.go)
+- [cmd/repowiki/logs.go](file://cmd/repowiki/logs.go)
 </cite>
 
 ## Table of Contents
@@ -27,7 +27,9 @@ Source files referenced:
 ## Command Reference
 
 ```
-repowiki v0.1.0 — Auto-generate Qoder repo wiki on git commits
+repowiki v0.1.0 — Auto-generate repo wiki on git commits
+
+Supports multiple AI engines: Qoder CLI, Claude Code, OpenAI Codex CLI.
 
 Usage:
   repowiki <command> [flags]
@@ -38,13 +40,14 @@ Commands:
   status      Show current status and configuration
   generate    Run full wiki generation
   update      Run incremental wiki update for recent changes
-  logs        Show the most recent log file
+  logs        Show latest generation log
   version     Show version
 
 Flags for 'enable':
+  --engine            AI engine: qoder, claude-code, codex (default: qoder)
+  --engine-path       Path to engine CLI binary
+  --model             Model level (engine-specific)
   --force             Reinstall hook even if already present
-  --qodercli-path     Path to qodercli binary
-  --model             Qoder model level (auto, efficient, performance, ultimate)
   --no-auto-commit    Don't auto-commit wiki changes
 
 Flags for 'update':
@@ -77,25 +80,32 @@ Installs the post-commit git hook and creates the configuration file. This is th
 
 | Flag | Type | Default | Description |
 |------|------|---------|-------------|
+| `--engine` | string | "qoder" | AI engine: `qoder`, `claude-code`, `codex` |
+| `--engine-path` | string | "" | Path to engine CLI binary |
+| `--model` | string | "" | Engine-specific model (e.g., `sonnet` for Claude) |
 | `--force` | bool | false | Reinstall hook even if already present |
-| `--qodercli-path` | string | "" | Path to qodercli binary |
-| `--model` | string | "" | Qoder model level (auto, efficient, performance, ultimate) |
 | `--no-auto-commit` | bool | false | Don't auto-commit wiki changes |
 
 ### Examples
 
 ```bash
-# Enable with defaults
+# Enable with Qoder (default)
 repowiki enable
+
+# Enable with Claude Code
+repowiki enable --engine claude-code
+
+# Enable with OpenAI Codex
+repowiki enable --engine codex
+
+# Enable with specific model
+repowiki enable --engine claude-code --model sonnet
 
 # Force reinstall
 repowiki enable --force
 
-# Specify Qoder CLI path
-repowiki enable --qodercli-path /Applications/Qoder.app/.../qodercli
-
-# Use performance model
-repowiki enable --model performance
+# Specify custom binary path
+repowiki enable --engine-path /path/to/engine
 
 # Disable auto-commit
 repowiki enable --no-auto-commit
@@ -113,9 +123,10 @@ repowiki enable --no-auto-commit
 ```
 repowiki enabled in /path/to/project
 
+  Engine:  qoder
+  Binary:  /usr/local/bin/qodercli
   Config:  .repowiki/config.json
   Hook:    .git/hooks/post-commit
-  Qoder:   found
 
 Every commit will now auto-update the repo wiki.
 Run 'repowiki generate' for initial full wiki generation.
@@ -193,8 +204,9 @@ repowiki status
 repowiki v0.1.0
 
   Status:       enabled
+  Engine:       qoder
   Hook:         installed (.git/hooks/post-commit)
-  Qoder CLI:    /Applications/Qoder.app/.../qodercli
+  Binary:       /usr/local/bin/qodercli
   Wiki path:    .qoder/repowiki/en/content/ (12 pages)
   Model:        auto
   Auto-commit:  true
@@ -351,7 +363,9 @@ repowiki enable --help
 ### Output Example
 
 ```
-repowiki v0.1.0 — Auto-generate Qoder repo wiki on git commits
+repowiki v0.1.0 — Auto-generate repo wiki on git commits
+
+Supports multiple AI engines: Qoder CLI, Claude Code, OpenAI Codex CLI.
 
 Usage:
   repowiki <command> [flags]
@@ -362,12 +376,14 @@ Commands:
   status      Show current status and configuration
   generate    Run full wiki generation
   update      Run incremental wiki update for recent changes
+  logs        Show latest generation log
   version     Show version
 
 Flags for 'enable':
+  --engine            AI engine: qoder, claude-code, codex (default: qoder)
+  --engine-path       Path to engine CLI binary
+  --model             Model level (engine-specific)
   --force             Reinstall hook even if already present
-  --qodercli-path     Path to qodercli binary
-  --model             Qoder model level (auto, efficient, performance, ultimate)
   --no-auto-commit    Don't auto-commit wiki changes
 
 Flags for 'update':
@@ -375,12 +391,13 @@ Flags for 'update':
   --from-hook         Internal: indicates hook-triggered run
 
 Examples:
-  repowiki enable                    # Enable in current project
-  repowiki enable --force            # Reinstall hook
-  repowiki generate                  # Full wiki generation
-  repowiki update --commit abc123    # Update for specific commit
-  repowiki logs                      # View most recent log
-  repowiki disable                   # Remove hook
+  repowiki enable                               # Enable with Qoder (default)
+  repowiki enable --engine claude-code           # Enable with Claude Code
+  repowiki enable --engine codex                 # Enable with OpenAI Codex
+  repowiki enable --engine claude-code --model sonnet  # With specific model
+  repowiki generate                              # Full wiki generation
+  repowiki status                                # Check status
+  repowiki disable                               # Remove hook
 ```
 
 ## Internal Command: hooks

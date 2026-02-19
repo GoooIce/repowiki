@@ -2,11 +2,11 @@
 
 <cite>
 Source files referenced:
-- [go.mod](/to/go.mod)
-- [Makefile](/to/Makefile)
-- [cmd/repowiki/main.go](/to/cmd/repowiki/main.go)
-- [internal/git/git.go](/to/internal/git/git.go)
-- [internal/wiki/qoder.go](/to/internal/wiki/qoder.go)
+- [go.mod](file://go.mod)
+- [Makefile](file://Makefile)
+- [cmd/repowiki/main.go](file://cmd/repowiki/main.go)
+- [internal/git/git.go](file://internal/git/git.go)
+- [internal/wiki/engine.go](file://internal/wiki/engine.go)
 </cite>
 
 ## Table of Contents
@@ -100,45 +100,40 @@ While the binary itself has no dependencies, it integrates with external tools:
 | Tool | Purpose | Detection |
 |------|---------|-----------|
 | `git` | Repository operations | Must be in PATH |
-| `qodercli` | AI-powered wiki generation | Configurable path |
+| `qodercli`, `claude`, or `codex` | AI-powered wiki generation | Configurable path |
 
-### Qoder CLI Detection
+### Engine Detection
 
-The tool searches for `qodercli` in multiple locations:
+The tool searches for the configured AI engine binary in multiple locations:
 
 ```go
-func FindQoderCLI(cfg *config.Config) (string, error) {
-    // 1. Use config override
-    if cfg.QoderCLIPath != "" && cfg.QoderCLIPath != "qodercli" {
-        if _, err := os.Stat(cfg.QoderCLIPath); err == nil {
-            return cfg.QoderCLIPath, nil
-        }
-    }
-
-    // 2. Check PATH
-    if path, err := exec.LookPath("qodercli"); err == nil {
-        return path, nil
-    }
-
-    // 3. Check known macOS locations
-    if runtime.GOOS == "darwin" {
-        knownPaths := []string{
-            "/Applications/Qoder.app/Contents/Resources/app/resources/bin/aarch64_darwin/qodercli",
-            "/Applications/Qoder.app/Contents/Resources/app/resources/bin/x86_64_darwin/qodercli",
-        }
-        // ...
-    }
-
-    // 4. Check known Linux locations
-    if runtime.GOOS == "linux" {
-        knownPaths := []string{
-            "/usr/bin/qodercli",
-            "/usr/local/bin/qodercli",
-        }
-        // ...
+func FindEngineBinary(cfg *config.Config) (string, error) {
+    switch cfg.Engine {
+    case config.EngineQoder:
+        return findQoderBinary(cfg)
+    case config.EngineClaudeCode:
+        return findClaudeCodeBinary(cfg)
+    case config.EngineCodex:
+        return findCodexBinary(cfg)
+    default:
+        return "", fmt.Errorf("unknown engine: %s", cfg.Engine)
     }
 }
 ```
+
+For Qoder CLI, it checks:
+1. Config `engine_path` override
+2. PATH for `qodercli`
+3. Known macOS locations (Qoder.app bundle)
+
+For Claude Code, it checks:
+1. Config `engine_path` override
+2. PATH for `claude`
+3. Common locations (`~/.local/bin/claude`, `~/.claude/bin/claude`, `/usr/local/bin/claude`)
+
+For OpenAI Codex, it checks:
+1. Config `engine_path` override
+2. PATH for `codex`
 
 ## Project Structure
 
@@ -151,7 +146,8 @@ repowiki/
 │   ├── status.go          # Status command
 │   ├── generate.go        # Full generation
 │   ├── update.go          # Incremental update
-│   └── hooks.go           # Hook entry point
+│   ├── hooks.go           # Hook entry point
+│   └── logs.go            # Logs command
 ├── internal/              # Internal packages
 │   ├── config/            # Configuration management
 │   ├── git/               # Git operations
@@ -159,7 +155,7 @@ repowiki/
 │   ├── lockfile/          # Process locking
 │   └── wiki/              # Wiki generation
 │       ├── wiki.go        # Core generation logic
-│       ├── qoder.go       # Qoder CLI integration
+│       ├── engine.go      # Multi-engine abstraction
 │       ├── commit.go      # Auto-commit logic
 │       ├── detect.go      # Change detection
 │       └── prompt.go      # Prompt building

@@ -2,10 +2,10 @@
 
 <cite>
 Source files referenced:
-- [CLAUDE.md](/to/CLAUDE.md)
-- [README.md](/to/README.md)
-- [cmd/repowiki/main.go](/to/cmd/repowiki/main.go)
-- [go.mod](/to/go.mod)
+- [CLAUDE.md](file://CLAUDE.md)
+- [README.md](file://README.md)
+- [cmd/repowiki/main.go](file://cmd/repowiki/main.go)
+- [go.mod](file://go.mod)
 </cite>
 
 ## Table of Contents
@@ -19,13 +19,14 @@ Source files referenced:
 
 ## Introduction
 
-**repowiki** is a Go-based CLI tool that automatically generates and maintains repository documentation (wiki) on every git commit. It integrates with the [Qoder](https://qoder.com) IDE/CLI to analyze code changes and produce comprehensive, up-to-date documentation.
+**repowiki** is a Go-based CLI tool that automatically generates and maintains repository documentation (wiki) on every git commit. It integrates with multiple AI engines including [Qoder CLI](https://qoder.com), [Claude Code](https://claude.ai/claude-code), and [OpenAI Codex CLI](https://github.com/openai/codex) to analyze code changes and produce comprehensive, up-to-date documentation.
 
 ## Project Purpose
 
 The tool solves the common problem of documentation drift — when code changes but documentation remains stale. By hooking into the git commit process, repowiki ensures that documentation stays synchronized with the codebase automatically.
 
 Key capabilities:
+- **Multi-engine support** — works with Qoder CLI, Claude Code, or OpenAI Codex
 - **Automatic wiki generation** triggered on every git commit
 - **Incremental updates** for efficient processing of small changes
 - **Full regeneration** when significant changes occur
@@ -102,8 +103,9 @@ Configuration is stored in `.repowiki/config.json`:
 ```json
 {
   "enabled": true,
-  "qodercli_path": "qodercli",
-  "model": "auto",
+  "engine": "qoder",
+  "engine_path": "",
+  "model": "",
   "max_turns": 50,
   "language": "en",
   "auto_commit": true,

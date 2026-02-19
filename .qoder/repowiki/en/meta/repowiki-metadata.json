@@ -31,14 +31,14 @@
     {
       "id": "c5d8e1b4a7f0c3d6e9b2a5f8c1d4e7a0",
       "path": "cmd/repowiki/main.go",
-      "line_range": "1-73",
+      "line_range": "1-79",
       "gmt_create": "2026-02-19T16:26:00Z",
       "gmt_modified": "2026-02-19T19:30:00Z"
     },
     {
       "id": "e3b6c9f2a5d8e1b4c7f0a3d6e9b2c5f8",
       "path": "cmd/repowiki/enable.go",
-      "line_range": "1-122",
+      "line_range": "1-131",
       "gmt_create": "2026-02-19T16:26:00Z",
       "gmt_modified": "2026-02-19T19:30:00Z"
     },
@@ -52,7 +52,7 @@
     {
       "id": "a9c2f5b8e1d4a7f0c3b6e9d2a5f8c1b4",
       "path": "cmd/repowiki/status.go",
-      "line_range": "1-88",
+      "line_range": "1-93",
       "gmt_create": "2026-02-19T16:26:00Z",
       "gmt_modified": "2026-02-19T16:26:00Z"
     },
@@ -87,7 +87,7 @@
     {
       "id": "c0f3a6d9e2b5c8f1a4e7d0a3f6c9b2e5",
       "path": "internal/config/config.go",
-      "line_range": "1-98",
+      "line_range": "1-119",
       "gmt_create": "2026-02-19T16:26:00Z",
       "gmt_modified": "2026-02-19T16:26:00Z"
     },
@@ -121,8 +121,8 @@
     },
     {
       "id": "e0a3f6c9b2e5d8a1f4c7e0a3f6c9b2e5",
-      "path": "internal/wiki/qoder.go",
-      "line_range": "1-88",
+      "path": "internal/wiki/engine.go",
+      "line_range": "1-167",
       "gmt_create": "2026-02-19T16:26:00Z",
       "gmt_modified": "2026-02-19T16:26:00Z"
     },

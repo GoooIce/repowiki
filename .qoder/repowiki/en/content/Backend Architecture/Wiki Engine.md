@@ -2,46 +2,50 @@
 
 <cite>
 Source files referenced:
-- [internal/wiki/wiki.go](/to/internal/wiki/wiki.go)
-- [internal/wiki/qoder.go](/to/internal/wiki/qoder.go)
-- [internal/wiki/commit.go](/to/internal/wiki/commit.go)
-- [internal/wiki/detect.go](/to/internal/wiki/detect.go)
-- [internal/wiki/prompt.go](/to/internal/wiki/prompt.go)
+- [internal/wiki/wiki.go](file://internal/wiki/wiki.go)
+- [internal/wiki/engine.go](file://internal/wiki/engine.go)
+- [internal/wiki/commit.go](file://internal/wiki/commit.go)
+- [internal/wiki/detect.go](file://internal/wiki/detect.go)
+- [internal/wiki/prompt.go](file://internal/wiki/prompt.go)
 </cite>
 
 ## Table of Contents
 
 - [Overview](#overview)
 - [Core Generation](#core-generation)
-- [Qoder CLI Integration](#qoder-cli-integration)
+- [Multi-Engine Support](#multi-engine-support)
 - [Auto-Commit System](#auto-commit-system)
 - [Change Detection](#change-detection)
 - [Prompt Building](#prompt-building)
 
 ## Overview
 
-The wiki engine (`internal/wiki/`) is the core component responsible for generating and updating repository documentation. It orchestrates the interaction with the Qoder CLI and manages the wiki lifecycle.
+The wiki engine (`internal/wiki/`) is the core component responsible for generating and updating repository documentation. It orchestrates the interaction with the configured AI engine (Qoder CLI, Claude Code, or OpenAI Codex) and manages the wiki lifecycle.
 
 ```mermaid
 flowchart TB
     subgraph WikiEngine["Wiki Engine"]
         Wiki["wiki.go"]
-        Qoder["qoder.go"]
+        Engine["engine.go"]
         Commit["commit.go"]
         Detect["detect.go"]
         Prompt["prompt.go"]
     end
 
     subgraph External["External"]
-        QoderCLI["Qoder CLI"]
+        Qoder["Qoder CLI"]
+        Claude["Claude Code"]
+        Codex["OpenAI Codex"]
         Git["Git"]
     end
 
     Wiki --> Prompt
-    Wiki --> Qoder
+    Wiki --> Engine
     Wiki --> Commit
     Wiki --> Detect
-    Qoder --> QoderCLI
+    Engine --> Qoder
+    Engine --> Claude
+    Engine --> Codex
     Commit --> Git
     Detect --> Git
 ```
@@ -67,8 +71,8 @@ func FullGenerate(gitRoot string, cfg *config.Config) error {
     // Build prompt for full generation
     prompt := BuildFullGeneratePrompt(cfg)
 
-    // Execute Qoder CLI
-    output, err := runQoder(cfg, gitRoot, prompt)
+    // Execute AI engine
+    output, err := RunEngine(cfg, gitRoot, prompt)
     if err != nil {
         logf(gitRoot, "qodercli failed: %v", err)
         return fmt.Errorf("wiki generation failed: %w", err)
@@ -109,8 +113,8 @@ func IncrementalUpdate(gitRoot string, cfg *config.Config, changedFiles []string
     // Build incremental prompt
     prompt := BuildIncrementalPrompt(cfg, changedFiles, affectedSections)
 
-    // Execute Qoder CLI
-    output, err := runQoder(cfg, gitRoot, prompt)
+    // Execute AI engine
+    output, err := RunEngine(cfg, gitRoot, prompt)
     if err != nil {
         logf(gitRoot, "qodercli failed: %v", err)
         return fmt.Errorf("wiki update failed: %w", err)
@@ -163,67 +167,84 @@ func logf(gitRoot string, format string, args ...any) {
 }
 ```
 
-## Qoder CLI Integration
+## Multi-Engine Support
 
-**File**: `internal/wiki/qoder.go`
+**File**: `internal/wiki/engine.go`
 
-### Finding Qoder CLI
+The wiki engine supports multiple AI backends through a unified interface.
 
-Searches for the Qoder CLI binary in multiple locations:
+### Supported Engines
+
+| Engine | CLI Binary | Non-Interactive Invocation |
+|--------|-----------|--------------------------|
+| `qoder` | `qodercli` | `-p "prompt" -q -w <dir> --max-turns N --dangerously-skip-permissions` |
+| `claude-code` | `claude` | `-p "prompt" --dangerously-skip-permissions --allowedTools ...` |
+| `codex` | `codex` | `exec "prompt" --full-auto` |
+
+Binaries are auto-detected from: `engine_path` config → `$PATH` → known OS locations.
+
+### Engine Interface
 
 ```go
-func FindQoderCLI(cfg *config.Config) (string, error) {
-    // 1. Use config override
-    if cfg.QoderCLIPath != "" && cfg.QoderCLIPath != "qodercli" {
-        if _, err := os.Stat(cfg.QoderCLIPath); err == nil {
-            return cfg.QoderCLIPath, nil
-        }
+// FindEngineBinary locates the CLI binary for the configured engine.
+func FindEngineBinary(cfg *config.Config) (string, error) {
+    switch cfg.Engine {
+    case config.EngineQoder:
+        return findQoderBinary(cfg)
+    case config.EngineClaudeCode:
+        return findClaudeCodeBinary(cfg)
+    case config.EngineCodex:
+        return findCodexBinary(cfg)
+    default:
+        return "", fmt.Errorf("unknown engine: %s", cfg.Engine)
     }
+}
 
-    // 2. Check PATH
-    if path, err := exec.LookPath("qodercli"); err == nil {
-        return path, nil
+// RunEngine invokes the configured engine with the given prompt.
+func RunEngine(cfg *config.Config, gitRoot string, prompt string) (string, error) {
+    switch cfg.Engine {
+    case config.EngineQoder:
+        return runQoder(cfg, gitRoot, prompt)
+    case config.EngineClaudeCode:
+        return runClaudeCode(cfg, gitRoot, prompt)
+    case config.EngineCodex:
+        return runCodex(cfg, gitRoot, prompt)
+    default:
+        return "", fmt.Errorf("unknown engine: %s", cfg.Engine)
     }
-
-    // 3. Check known macOS locations
-    if runtime.GOOS == "darwin" {
-        knownPaths := []string{
-            "/Applications/Qoder.app/Contents/Resources/app/resources/bin/aarch64_darwin/qodercli",
-            "/Applications/Qoder.app/Contents/Resources/app/resources/bin/x86_64_darwin/qodercli",
-        }
-        for _, p := range knownPaths {
-            if _, err := os.Stat(p); err == nil {
-                return p, nil
-            }
-        }
-    }
-
-    // 4. Check known Linux locations
-    if runtime.GOOS == "linux" {
-        knownPaths := []string{
-            "/usr/bin/qodercli",
-            "/usr/local/bin/qodercli",
-        }
-        for _, p := range knownPaths {
-            if _, err := os.Stat(p); err == nil {
-                return p, nil
-            }
-        }
-    }
-
-    return "", fmt.Errorf("qodercli not found")
 }
 ```
 
-### Running Qoder CLI
+### Qoder CLI Implementation
 
 ```go
+func findQoderBinary(cfg *config.Config) (string, error) {
+    if cfg.EnginePath != "" {
+        if _, err := os.Stat(cfg.EnginePath); err == nil {
+            return cfg.EnginePath, nil
+        }
+    }
+    if path, err := exec.LookPath("qodercli"); err == nil {
+        return path, nil
+    }
+    if runtime.GOOS == "darwin" {
+        for _, p := range []string{
+            "/Applications/Qoder.app/Contents/Resources/app/resources/bin/aarch64_darwin/qodercli",
+            "/Applications/Qoder.app/Contents/Resources/app/resources/bin/x86_64_darwin/qodercli",
+        } {
+            if _, err := os.Stat(p); err == nil {
+                return p, nil
+            }
+        }
+    }
+    return "", fmt.Errorf("qodercli not found")
+}
+
 func runQoder(cfg *config.Config, gitRoot string, prompt string) (string, error) {
-    cliPath, err := FindQoderCLI(cfg)
+    bin, err := findQoderBinary(cfg)
     if err != nil {
         return "", err
     }
-
     args := []string{
         "-p", prompt,
         "-q",
@@ -232,37 +253,100 @@ func runQoder(cfg *config.Config, gitRoot string, prompt string) (string, error)
         "--dangerously-skip-permissions",
         "--allowed-tools", "Read,Write,Edit,Glob,Grep,Bash",
     }
-
-    if cfg.Model != "" && cfg.Model != "auto" {
+    if cfg.Model != "" {
         args = append(args, "--model", cfg.Model)
     }
+    return execCLI(bin, gitRoot, args)
+}
+```
 
-    cmd := exec.Command(cliPath, args...)
-    cmd.Dir = gitRoot
+### Claude Code Implementation
+
+```go
+func findClaudeCodeBinary(cfg *config.Config) (string, error) {
+    if cfg.EnginePath != "" {
+        if _, err := os.Stat(cfg.EnginePath); err == nil {
+            return cfg.EnginePath, nil
+        }
+    }
+    if path, err := exec.LookPath("claude"); err == nil {
+        return path, nil
+    }
+    home, _ := os.UserHomeDir()
+    for _, p := range []string{
+        home + "/.local/bin/claude",
+        home + "/.claude/bin/claude",
+        "/usr/local/bin/claude",
+    } {
+        if _, err := os.Stat(p); err == nil {
+            return p, nil
+        }
+    }
+    return "", fmt.Errorf("claude not found")
+}
+
+func runClaudeCode(cfg *config.Config, gitRoot string, prompt string) (string, error) {
+    bin, err := findClaudeCodeBinary(cfg)
+    if err != nil {
+        return "", err
+    }
+    args := []string{
+        "-p", prompt,
+        "--dangerously-skip-permissions",
+        "--allowedTools", "Read,Write,Edit,Glob,Grep,Bash",
+    }
+    if cfg.Model != "" {
+        args = append(args, "--model", cfg.Model)
+    }
+    return execCLI(bin, gitRoot, args)
+}
+```
+
+### OpenAI Codex Implementation
+
+```go
+func findCodexBinary(cfg *config.Config) (string, error) {
+    if cfg.EnginePath != "" {
+        if _, err := os.Stat(cfg.EnginePath); err == nil {
+            return cfg.EnginePath, nil
+        }
+    }
+    if path, err := exec.LookPath("codex"); err == nil {
+        return path, nil
+    }
+    return "", fmt.Errorf("codex not found")
+}
+
+func runCodex(cfg *config.Config, gitRoot string, prompt string) (string, error) {
+    bin, err := findCodexBinary(cfg)
+    if err != nil {
+        return "", err
+    }
+    args := []string{
+        "exec", prompt,
+        "--full-auto",
+    }
+    return execCLI(bin, gitRoot, args)
+}
+```
+
+### Common Executor
+
+```go
+func execCLI(bin string, dir string, args []string) (string, error) {
+    cmd := exec.Command(bin, args...)
+    cmd.Dir = dir
 
     var stdout, stderr bytes.Buffer
     cmd.Stdout = &stdout
     cmd.Stderr = &stderr
 
     if err := cmd.Run(); err != nil {
-        return "", fmt.Errorf("qodercli error: %w\nstderr: %s", err, stderr.String())
+        return "", fmt.Errorf("%s error: %w\nstderr: %s", bin, err, stderr.String())
     }
-
     return stdout.String(), nil
 }
 ```
-
-### CLI Arguments
-
-| Argument | Description |
-|----------|-------------|
-| `-p <prompt>` | The prompt to execute |
-| `-q` | Quiet mode |
-| `-w <dir>` | Working directory |
-| `--max-turns <n>` | Maximum AI interaction turns |
-| `--dangerously-skip-permissions` | Skip permission prompts |
-| `--allowed-tools <list>` | Comma-separated list of allowed tools |
-| `--model <model>` | Model level (efficient, performance, ultimate) |
 
 ## Auto-Commit System
 

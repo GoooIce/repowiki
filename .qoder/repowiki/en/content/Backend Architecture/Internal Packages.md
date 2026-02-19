@@ -2,10 +2,10 @@
 
 <cite>
 Source files referenced:
-- [internal/config/config.go](/to/internal/config/config.go)
-- [internal/git/git.go](/to/internal/git/git.go)
-- [internal/hook/hook.go](/to/internal/hook/hook.go)
-- [internal/lockfile/lockfile.go](/to/internal/lockfile/lockfile.go)
+- [internal/config/config.go](file://internal/config/config.go)
+- [internal/git/git.go](file://internal/git/git.go)
+- [internal/hook/hook.go](file://internal/hook/hook.go)
+- [internal/lockfile/lockfile.go](file://internal/lockfile/lockfile.go)
 </cite>
 
 ## Table of Contents
@@ -65,7 +65,8 @@ const (
 ```go
 type Config struct {
     Enabled               bool     `json:"enabled"`
-    QoderCLIPath          string   `json:"qodercli_path"`
+    Engine                string   `json:"engine"`
+    EnginePath            string   `json:"engine_path,omitempty"`
     Model                 string   `json:"model"`
     MaxTurns              int      `json:"max_turns"`
     Language              string   `json:"language"`
@@ -85,8 +86,9 @@ type Config struct {
 func Default() *Config {
     return &Config{
         Enabled:      true,
-        QoderCLIPath: "qodercli",
-        Model:        "auto",
+        Engine:       "qoder",
+        EnginePath:   "",
+        Model:        "",
         MaxTurns:     50,
         Language:     "en",
         AutoCommit:   true,
@@ -131,6 +133,10 @@ func Load(gitRoot string) (*Config, error) {
     var cfg Config
     if err := json.Unmarshal(data, &cfg); err != nil {
         return nil, fmt.Errorf("failed to parse config: %w", err)
+    }
+    // Migration: old configs without engine field default to qoder
+    if cfg.Engine == "" {
+        cfg.Engine = EngineQoder
     }
     return &cfg, nil
 }

@@ -2,9 +2,9 @@
 
 <cite>
 Source files referenced:
-- [internal/config/config.go](/to/internal/config/config.go)
-- [.repowiki/config.json](/to/.repowiki/config.json)
-- [cmd/repowiki/enable.go](/to/cmd/repowiki/enable.go)
+- [internal/config/config.go](file://internal/config/config.go)
+- [.repowiki/config.json](file://.repowiki/config.json)
+- [cmd/repowiki/enable.go](file://cmd/repowiki/enable.go)
 </cite>
 
 ## Table of Contents
@@ -53,8 +53,9 @@ flowchart LR
 ```json
 {
   "enabled": true,
-  "qodercli_path": "qodercli",
-  "model": "auto",
+  "engine": "qoder",
+  "engine_path": "",
+  "model": "",
   "max_turns": 50,
   "language": "en",
   "auto_commit": true,
@@ -80,7 +81,8 @@ flowchart LR
 ```go
 type Config struct {
     Enabled               bool     `json:"enabled"`
-    QoderCLIPath          string   `json:"qodercli_path"`
+    Engine                string   `json:"engine"`
+    EnginePath            string   `json:"engine_path,omitempty"`
     Model                 string   `json:"model"`
     MaxTurns              int      `json:"max_turns"`
     Language              string   `json:"language"`
@@ -99,8 +101,9 @@ type Config struct {
 | Field | Type | Description |
 |-------|------|-------------|
 | `enabled` | `bool` | Whether repowiki is active in this repository |
-| `qodercli_path` | `string` | Path to the Qoder CLI binary |
-| `model` | `string` | AI model level (auto, efficient, performance, ultimate) |
+| `engine` | `string` | AI engine: `qoder`, `claude-code`, or `codex` |
+| `engine_path` | `string` | Override path to engine CLI binary (auto-detected if empty) |
+| `model` | `string` | Engine-specific model (e.g., `sonnet` for Claude, `performance` for Qoder) |
 | `max_turns` | `int` | Maximum number of AI interaction turns |
 | `language` | `string` | Language code for wiki generation (e.g., "en") |
 | `auto_commit` | `bool` | Whether to automatically commit wiki changes |
@@ -117,8 +120,9 @@ type Config struct {
 func Default() *Config {
     return &Config{
         Enabled:      true,
-        QoderCLIPath: "qodercli",
-        Model:        "auto",
+        Engine:       "qoder",
+        EnginePath:   "",
+        Model:        "",
         MaxTurns:     50,
         Language:     "en",
         AutoCommit:   true,
@@ -155,7 +159,22 @@ const (
     ConfigDir  = ".repowiki"
     ConfigFile = "config.json"
     LogDir     = "logs"
+
+    EngineQoder      = "qoder"
+    EngineClaudeCode = "claude-code"
+    EngineCodex      = "codex"
 )
+
+var ValidEngines = []string{EngineQoder, EngineClaudeCode, EngineCodex}
+
+func IsValidEngine(engine string) bool {
+    for _, e := range ValidEngines {
+        if e == engine {
+            return true
+        }
+    }
+    return false
+}
 
 // Returns /path/to/repo/.repowiki
 func Dir(gitRoot string) string {
@@ -181,12 +200,14 @@ func Load(gitRoot string) (*Config, error) {
     if err != nil {
         return nil, fmt.Errorf("failed to read config: %w", err)
     }
-
     var cfg Config
     if err := json.Unmarshal(data, &cfg); err != nil {
         return nil, fmt.Errorf("failed to parse config: %w", err)
     }
-
+    // Migration: old configs without engine field default to qoder
+    if cfg.Engine == "" {
+        cfg.Engine = EngineQoder
+    }
     return &cfg, nil
 }
 ```
@@ -225,8 +246,15 @@ func handleEnable(args []string) {
     }
 
     // Apply CLI flag overrides
-    if *qoderPath != "" {
-        cfg.QoderCLIPath = *qoderPath
+    if *engine != "" {
+        if !config.IsValidEngine(*engine) {
+            fmt.Fprintf(os.Stderr, "Error: unknown engine %q\n", *engine)
+            os.Exit(1)
+        }
+        cfg.Engine = *engine
+    }
+    if *enginePath != "" {
+        cfg.EnginePath = *enginePath
     }
     if *model != "" {
         cfg.Model = *model
@@ -235,6 +263,12 @@ func handleEnable(args []string) {
         cfg.AutoCommit = false
     }
     cfg.Enabled = true
+
+    // Validate engine binary is reachable
+    binPath, findErr := wiki.FindEngineBinary(cfg)
+    if findErr != nil {
+        fmt.Fprintf(os.Stderr, "Warning: %v\n", findErr)
+    }
 
     // Save updated config
     config.Save(gitRoot, cfg)
@@ -253,10 +287,8 @@ func UpdateLastRun(gitRoot string, commitHash string) error {
     if err != nil {
         return err
     }
-
     cfg.LastRun = time.Now().UTC().Format(time.RFC3339)
     cfg.LastCommitHash = commitHash
-
     return Save(gitRoot, cfg)
 }
 ```
