@@ -89,6 +89,23 @@ repowiki version
 
 ## Project Setup
 
+### Authenticate Your AI Engine (One Time)
+
+Before enabling repowiki, authenticate with your chosen AI engine:
+
+```bash
+# Qoder
+qodercli /login
+# or: export QODER_PERSONAL_ACCESS_TOKEN=<token>
+
+# Claude Code
+claude  # follow the auth prompts
+
+# Codex
+codex  # follow the auth prompts
+# or: export CODEX_API_KEY=<key>
+```
+
 ### Enable repowiki in Your Project
 
 Navigate to your project directory and run:
@@ -134,7 +151,7 @@ repowiki enable --no-auto-commit
 |------|-------------|
 | `--engine` | AI engine: `qoder`, `claude-code`, or `codex` (default: `qoder`) |
 | `--engine-path` | Custom path to the engine CLI binary |
-| `--model` | Engine-specific model (e.g., `sonnet` for Claude) |
+| `--model` | Engine-specific model (e.g., `sonnet` for Claude, `performance` for Qoder) |
 | `--force` | Reinstall hook even if already present |
 | `--no-auto-commit` | Generate wiki but don't auto-commit changes |
 
@@ -193,7 +210,7 @@ This will:
 3. Create metadata file at `.qoder/repowiki/en/meta/repowiki-metadata.json`
 4. Auto-commit changes (if enabled)
 
-**Note**: Initial generation may take several minutes depending on codebase size.
+**Note**: Initial generation takes **3-5 minutes** depending on codebase size.
 
 ## Daily Usage
 

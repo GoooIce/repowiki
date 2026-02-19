@@ -20,6 +20,12 @@ Source files referenced:
 
 Change detection determines which files have been modified and which wiki sections need updating. The system uses Git operations to identify changes and heuristics to map them to documentation sections.
 
+When a commit is made, repowiki:
+1. Detects changed files using Git operations
+2. Filters out excluded paths (like `.qoder/repowiki/`, `node_modules/`, etc.)
+3. Determines if incremental update or full generation is needed based on the `full_generate_threshold` (default: 20 files)
+4. Maps changed files to affected wiki sections using reverse index + heuristic matching
+
 ```mermaid
 flowchart TB
     subgraph Input["Input"]

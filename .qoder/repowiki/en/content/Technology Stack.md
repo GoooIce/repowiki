@@ -100,7 +100,9 @@ While the binary itself has no dependencies, it integrates with external tools:
 | Tool | Purpose | Detection |
 |------|---------|-----------|
 | `git` | Repository operations | Must be in PATH |
-| `qodercli`, `claude`, or `codex` | AI-powered wiki generation | Configurable path |
+| `qodercli` | Qoder CLI for wiki generation | Auto-detected from PATH or `engine_path` |
+| `claude` | Claude Code for wiki generation | Auto-detected from PATH or `engine_path` |
+| `codex` | OpenAI Codex for wiki generation | Auto-detected from PATH or `engine_path` |
 
 ### Engine Detection
 
@@ -121,17 +123,22 @@ func FindEngineBinary(cfg *config.Config) (string, error) {
 }
 ```
 
-For Qoder CLI, it checks:
+**For Qoder CLI** (`qodercli`):
 1. Config `engine_path` override
 2. PATH for `qodercli`
-3. Known macOS locations (Qoder.app bundle)
+3. Known macOS locations:
+   - `/Applications/Qoder.app/Contents/MacOS/qodercli`
+   - `/Applications/Qoder.app/Contents/Resources/qodercli`
 
-For Claude Code, it checks:
+**For Claude Code** (`claude`):
 1. Config `engine_path` override
 2. PATH for `claude`
-3. Common locations (`~/.local/bin/claude`, `~/.claude/bin/claude`, `/usr/local/bin/claude`)
+3. Common locations:
+   - `~/.local/bin/claude`
+   - `~/.claude/bin/claude`
+   - `/usr/local/bin/claude`
 
-For OpenAI Codex, it checks:
+**For OpenAI Codex** (`codex`):
 1. Config `engine_path` override
 2. PATH for `codex`
 

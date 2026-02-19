@@ -19,17 +19,28 @@ Source files referenced:
 
 ## Introduction
 
-**repowiki** is a Go-based CLI tool that automatically generates and maintains repository documentation (wiki) on every git commit. It integrates with multiple AI engines including [Qoder CLI](https://qoder.com), [Claude Code](https://claude.ai/claude-code), and [OpenAI Codex CLI](https://github.com/openai/codex) to analyze code changes and produce comprehensive, up-to-date documentation.
+**repowiki** is a Go-based CLI tool that automatically generates and maintains repository documentation (wiki) on every git commit. It integrates with multiple AI engines including [Qoder CLI](https://qoder.com/cli), [Claude Code](https://claude.ai/claude-code), and [OpenAI Codex CLI](https://github.com/openai/codex) to analyze code changes and produce comprehensive, up-to-date documentation.
+
+Inspired by [Entire CLI](https://entire.io) — but instead of capturing AI sessions, repowiki keeps your project documentation in sync with your code automatically.
 
 ## Project Purpose
 
 The tool solves the common problem of documentation drift — when code changes but documentation remains stale. By hooking into the git commit process, repowiki ensures that documentation stays synchronized with the codebase automatically.
 
+### What It Does
+
+Every time you `git commit`, repowiki:
+
+1. Detects which files changed
+2. Determines which wiki sections are affected
+3. Runs your chosen AI engine in the background to update documentation
+4. Auto-commits the updated wiki as a separate `[repowiki]` commit
+
 Key capabilities:
 - **Multi-engine support** — works with Qoder CLI, Claude Code, or OpenAI Codex
 - **Automatic wiki generation** triggered on every git commit
-- **Incremental updates** for efficient processing of small changes
-- **Full regeneration** when significant changes occur
+- **Incremental updates** for efficient processing of small changes (< 20 files, configurable)
+- **Full regeneration** when significant changes occur (> 20 files)
 - **Loop prevention** to avoid infinite commit cycles (3-layer protection)
 - **Configurable** via JSON configuration file
 - **Hook coexistence** — works alongside existing git hooks without disruption
