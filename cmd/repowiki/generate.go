@@ -22,16 +22,14 @@ func handleGenerate(args []string) {
 		os.Exit(1)
 	}
 
+	head, _ := git.HeadCommit(gitRoot)
+
 	fmt.Println("Starting full wiki generation... (this may take several minutes)")
 
-	if err := wiki.FullGenerate(gitRoot, cfg); err != nil {
+	if err := wiki.FullGenerate(gitRoot, cfg, head); err != nil {
 		fmt.Fprintf(os.Stderr, "Error: %v\n", err)
 		os.Exit(1)
 	}
-
-	// Update last run
-	head, _ := git.HeadCommit(gitRoot)
-	config.UpdateLastRun(gitRoot, head)
 
 	fmt.Println("Wiki generation complete.")
 }

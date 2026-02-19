@@ -65,7 +65,7 @@ func handleUpdate(args []string) {
 		if !*fromHook {
 			fmt.Printf("Running full wiki generation (%d files changed)...\n", len(changedFiles))
 		}
-		if err := wiki.FullGenerate(gitRoot, cfg); err != nil {
+		if err := wiki.FullGenerate(gitRoot, cfg, hash); err != nil {
 			fmt.Fprintf(os.Stderr, "Error: %v\n", err)
 			os.Exit(1)
 		}
@@ -73,14 +73,11 @@ func handleUpdate(args []string) {
 		if !*fromHook {
 			fmt.Printf("Updating wiki for %d changed files...\n", len(changedFiles))
 		}
-		if err := wiki.IncrementalUpdate(gitRoot, cfg, changedFiles); err != nil {
+		if err := wiki.IncrementalUpdate(gitRoot, cfg, changedFiles, hash); err != nil {
 			fmt.Fprintf(os.Stderr, "Error: %v\n", err)
 			os.Exit(1)
 		}
 	}
-
-	// Update last run
-	config.UpdateLastRun(gitRoot, hash)
 
 	if !*fromHook {
 		fmt.Println("Wiki update complete.")

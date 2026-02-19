@@ -11,7 +11,7 @@ import (
 )
 
 // FullGenerate performs a complete wiki generation from scratch.
-func FullGenerate(gitRoot string, cfg *config.Config) error {
+func FullGenerate(gitRoot string, cfg *config.Config, commitHash string) error {
 	if err := lockfile.Acquire(gitRoot); err != nil {
 		return fmt.Errorf("cannot acquire lock: %w", err)
 	}
@@ -30,6 +30,7 @@ func FullGenerate(gitRoot string, cfg *config.Config) error {
 	logf(gitRoot, "engine completed, output length: %d", len(output))
 
 	if cfg.AutoCommit {
+		config.UpdateLastRun(gitRoot, commitHash)
 		if err := CommitChanges(gitRoot, cfg, "full wiki generation"); err != nil {
 			logf(gitRoot, "auto-commit failed: %v", err)
 			return err
@@ -41,7 +42,7 @@ func FullGenerate(gitRoot string, cfg *config.Config) error {
 }
 
 // IncrementalUpdate updates wiki for specific changed files.
-func IncrementalUpdate(gitRoot string, cfg *config.Config, changedFiles []string) error {
+func IncrementalUpdate(gitRoot string, cfg *config.Config, changedFiles []string, commitHash string) error {
 	if err := lockfile.Acquire(gitRoot); err != nil {
 		return fmt.Errorf("cannot acquire lock: %w", err)
 	}
@@ -63,6 +64,7 @@ func IncrementalUpdate(gitRoot string, cfg *config.Config, changedFiles []string
 	logf(gitRoot, "engine completed, output length: %d", len(output))
 
 	if cfg.AutoCommit {
+		config.UpdateLastRun(gitRoot, commitHash)
 		desc := fmt.Sprintf("update wiki for %d changed files", len(changedFiles))
 		if err := CommitChanges(gitRoot, cfg, desc); err != nil {
 			logf(gitRoot, "auto-commit failed: %v", err)
