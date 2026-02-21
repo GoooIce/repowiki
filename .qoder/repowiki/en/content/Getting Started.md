@@ -230,17 +230,23 @@ func handleEnable(args []string) {
             cfg.EnginePath = ""
             binPath, findErr = wiki.FindEngineBinary(cfg)
             if findErr == nil {
+                detected = true
                 break
             }
         }
+        if !detected {
+            fmt.Fprintf(os.Stderr, "Error: no supported AI engine found\n")
+            os.Exit(1)
+        }
+        fmt.Printf("Auto-detected engine: %s (%s)\n\n", cfg.Engine, binPath)
     }
-
+    
     // 5. Save config
     config.Save(gitRoot, cfg)
-
+    
     // 6. Install git hook
     hook.Install(gitRoot, *force, selfPath)
-
+    
     // 7. Create Qoder command
     createQoderCommand(gitRoot)
 }

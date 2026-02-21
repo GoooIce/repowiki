@@ -90,7 +90,7 @@ Installs repowiki into the current git repository.
 
 | Flag | Type | Description |
 |------|------|-------------|
-| `--engine` | string | AI engine: `qoder`, `claude-code`, `codex` (default: `qoder`, auto-detected if not found) |
+| `--engine` | string | AI engine: `qoder`, `claude-code`, `codex` (auto-detected if not specified) |
 | `--engine-path` | string | Path to engine CLI binary |
 | `--model` | string | Engine-specific model level |
 | `--force` | bool | Reinstall hook even if already present |
@@ -98,9 +98,9 @@ Installs repowiki into the current git repository.
 
 ### Engine Auto-Detection
 
-When no engine is explicitly specified via `--engine` or `--engine-path`, and the default engine (`qoder`) is not found, repowiki automatically attempts to detect an available engine. The detection order is:
+When no engine is explicitly specified via `--engine` or `--engine-path`, repowiki automatically attempts to detect an available engine. The detection order is:
 
-1. `claude-code` (Claude Code by Anthropic)
+1. `claude-code` (Claude Code by Anthropic) — most commonly available
 2. `qoder` (Qoder CLI)
 3. `codex` (OpenAI Codex CLI)
 
