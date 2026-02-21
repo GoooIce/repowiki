@@ -35,7 +35,8 @@ func handleEnable(args []string) {
 	}
 
 	// Apply flag overrides
-	if *engine != "" {
+	engineExplicit := *engine != ""
+	if engineExplicit {
 		if !config.IsValidEngine(*engine) {
 			fmt.Fprintf(os.Stderr, "Error: unknown engine %q (valid: %s)\n", *engine, strings.Join(config.ValidEngines, ", "))
 			os.Exit(1)
@@ -56,8 +57,30 @@ func handleEnable(args []string) {
 	// Validate engine binary is reachable
 	binPath, findErr := wiki.FindEngineBinary(cfg)
 	if findErr != nil {
-		fmt.Fprintf(os.Stderr, "Warning: %v\n", findErr)
-		fmt.Fprintf(os.Stderr, "Set the path with: repowiki enable --engine-path /path/to/binary\n\n")
+		if engineExplicit || *enginePath != "" {
+			// User explicitly chose this engine — fail hard
+			fmt.Fprintf(os.Stderr, "Error: %v\n", findErr)
+			fmt.Fprintf(os.Stderr, "Set the path with: repowiki enable --engine-path /path/to/binary\n")
+			os.Exit(1)
+		}
+		// No explicit engine — auto-detect the first available one
+		detected := false
+		for _, eng := range config.EngineDetectOrder {
+			cfg.Engine = eng
+			cfg.EnginePath = ""
+			binPath, findErr = wiki.FindEngineBinary(cfg)
+			if findErr == nil {
+				detected = true
+				break
+			}
+		}
+		if !detected {
+			fmt.Fprintf(os.Stderr, "Error: no supported AI engine found\n")
+			fmt.Fprintf(os.Stderr, "Install one of: qodercli, claude, codex\n")
+			fmt.Fprintf(os.Stderr, "Or specify a path: repowiki enable --engine claude-code --engine-path /path/to/claude\n")
+			os.Exit(1)
+		}
+		fmt.Printf("Auto-detected engine: %s (%s)\n\n", cfg.Engine, binPath)
 	}
 
 	// Save config

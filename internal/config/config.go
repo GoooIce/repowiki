@@ -58,6 +58,10 @@ func Default() *Config {
 
 var ValidEngines = []string{EngineQoder, EngineClaudeCode, EngineCodex}
 
+// EngineDetectOrder is the order in which engines are tried during auto-detection.
+// claude-code first because it's the most commonly available.
+var EngineDetectOrder = []string{EngineClaudeCode, EngineQoder, EngineCodex}
+
 func IsValidEngine(engine string) bool {
 	for _, e := range ValidEngines {
 		if e == engine {
