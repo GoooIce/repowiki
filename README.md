@@ -45,7 +45,7 @@ aeaf37f [repowiki] full wiki generation               # auto-generated
 ### From source (recommended)
 
 ```bash
-go install github.com/IKrasnodymov/repowiki/cmd/repowiki@latest
+go install github.com/GoooIce/repowiki/cmd/repowiki@latest
 ```
 
 Make sure `~/go/bin` is in your PATH:
@@ -58,7 +58,7 @@ export PATH="$HOME/go/bin:$PATH"
 ### Build locally
 
 ```bash
-git clone https://github.com/IKrasnodymov/repowiki.git
+git clone https://github.com/GoooIce/repowiki.git
 cd repowiki
 make install
 ```

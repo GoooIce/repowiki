@@ -8,7 +8,7 @@ import (
 	"runtime"
 	"strconv"
 
-	"github.com/ikrasnodymov/repowiki/internal/config"
+	"github.com/GoooIce/repowiki/internal/config"
 )
 
 // FindEngineBinary locates the CLI binary for the configured engine.

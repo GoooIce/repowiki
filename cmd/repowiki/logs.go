@@ -6,8 +6,8 @@ import (
 	"path/filepath"
 	"sort"
 
-	"github.com/ikrasnodymov/repowiki/internal/config"
-	"github.com/ikrasnodymov/repowiki/internal/git"
+	"github.com/GoooIce/repowiki/internal/config"
+	"github.com/GoooIce/repowiki/internal/git"
 )
 
 func handleLogs(args []string) {

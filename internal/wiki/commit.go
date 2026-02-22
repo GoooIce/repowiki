@@ -6,8 +6,8 @@ import (
 	"path/filepath"
 	"strconv"
 
-	"github.com/ikrasnodymov/repowiki/internal/config"
-	"github.com/ikrasnodymov/repowiki/internal/git"
+	"github.com/GoooIce/repowiki/internal/config"
+	"github.com/GoooIce/repowiki/internal/git"
 )
 
 const sentinelFile = ".committing"

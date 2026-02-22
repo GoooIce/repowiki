@@ -6,7 +6,7 @@ import (
 	"path/filepath"
 	"strings"
 
-	"github.com/ikrasnodymov/repowiki/internal/config"
+	"github.com/GoooIce/repowiki/internal/config"
 )
 
 type codeSnippet struct {

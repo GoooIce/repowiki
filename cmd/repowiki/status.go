@@ -5,10 +5,10 @@ import (
 	"os"
 	"path/filepath"
 
-	"github.com/ikrasnodymov/repowiki/internal/config"
-	"github.com/ikrasnodymov/repowiki/internal/git"
-	"github.com/ikrasnodymov/repowiki/internal/hook"
-	"github.com/ikrasnodymov/repowiki/internal/wiki"
+	"github.com/GoooIce/repowiki/internal/config"
+	"github.com/GoooIce/repowiki/internal/git"
+	"github.com/GoooIce/repowiki/internal/hook"
+	"github.com/GoooIce/repowiki/internal/wiki"
 )
 
 func handleStatus(args []string) {

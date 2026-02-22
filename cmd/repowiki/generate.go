@@ -4,9 +4,9 @@ import (
 	"fmt"
 	"os"
 
-	"github.com/ikrasnodymov/repowiki/internal/config"
-	"github.com/ikrasnodymov/repowiki/internal/git"
-	"github.com/ikrasnodymov/repowiki/internal/wiki"
+	"github.com/GoooIce/repowiki/internal/config"
+	"github.com/GoooIce/repowiki/internal/git"
+	"github.com/GoooIce/repowiki/internal/wiki"
 )
 
 func handleGenerate(args []string) {

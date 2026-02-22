@@ -6,8 +6,8 @@ import (
 	"path/filepath"
 	"time"
 
-	"github.com/ikrasnodymov/repowiki/internal/config"
-	"github.com/ikrasnodymov/repowiki/internal/lockfile"
+	"github.com/GoooIce/repowiki/internal/config"
+	"github.com/GoooIce/repowiki/internal/lockfile"
 )
 
 // FullGenerate performs a complete wiki generation from scratch.

@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"strings"
 
-	"github.com/ikrasnodymov/repowiki/internal/config"
+	"github.com/GoooIce/repowiki/internal/config"
 )
 
 func BuildFullGeneratePrompt(cfg *config.Config) string {

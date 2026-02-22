@@ -7,10 +7,10 @@ import (
 	"strings"
 	"syscall"
 
-	"github.com/ikrasnodymov/repowiki/internal/config"
-	"github.com/ikrasnodymov/repowiki/internal/git"
-	"github.com/ikrasnodymov/repowiki/internal/lockfile"
-	"github.com/ikrasnodymov/repowiki/internal/wiki"
+	"github.com/GoooIce/repowiki/internal/config"
+	"github.com/GoooIce/repowiki/internal/git"
+	"github.com/GoooIce/repowiki/internal/lockfile"
+	"github.com/GoooIce/repowiki/internal/wiki"
 )
 
 // handleHooks is the entry point called by the git post-commit hook.
