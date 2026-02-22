@@ -1,9 +1,9 @@
 {
   "enabled": true,
-  "engine": "qoder",
+  "engine": "claude-code",
   "model": "auto",
   "max_turns": 50,
-  "language": "en",
+  "language": "zh",
   "auto_commit": true,
   "commit_prefix": "[repowiki]",
   "excluded_paths": [
